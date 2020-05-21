@@ -1,0 +1,12 @@
+diff --git a/scripts/Makefile.build b/scripts/Makefile.build
+index 649ce6844033..7967e9265f02 100644
+--- a/scripts/Makefile.build
++++ b/scripts/Makefile.build
+@@ -23,7 +23,7 @@ EXTRA_CFLAGS   :=
+ EXTRA_CPPFLAGS :=
+ EXTRA_LDFLAGS  :=
+ asflags-y  :=
+-ccflags-y  :=
++ccflags-y  := -I$(src)
+ cppflags-y :=
+ ldflags-y  :=
