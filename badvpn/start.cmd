@@ -1,0 +1,2 @@
+@rem using tun2sock from: https://github.com/eycorsican/go-tun2socks
+D:\gitlab\badvpn\build\tun2socks\Release\tun2socks-windows-4.0-amd64.exe -tunAddr 192.168.222.2 -tunGw 192.168.222.1 -tunMask 255.255.255.0 -tunName "本地连接" -proxyServer 127.0.0.1:8964
