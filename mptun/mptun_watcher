@@ -1,0 +1,17 @@
+#!/bin/bash
+# set -x
+echo $$
+trap 'kill 0' SIGINT SIGTERM EXIT
+# see: https://stackoverflow.com/questions/360201/how-do-i-kill-background-processes-jobs-when-my-shell-script-exits
+
+(
+  while true; do 
+    /root/mptun -i tun0 -p 8383 -v 10.0.0.1 -t 10.0.0.2 -r $REMOTE_ADDR -l $LOCAL_ADDR1 -l $LOCAL_ADDR2 l $LOCAL_ADDR3 -k $PSK
+  done
+)&
+
+while sleep 5;do
+  if ! ping -c 1 -w 2 10.0.0.2 >/dev/null 2>&1; then
+    killall mptun
+  fi
+done
