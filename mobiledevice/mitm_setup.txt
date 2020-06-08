@@ -1,0 +1,12 @@
+
+# 重命名 usbmuxd
+sudo mv /var/run/usbmuxd /var/run/usbmuxx 
+
+# ssh, 转发 mac 27106 到 本机的 27106
+ssh -R27016:127.0.0.1:27016 MacVM2
+
+# 转发 /var/run/usbmuxd 到 27106
+sudo socat -t100 UNIX-LISTEN:/var/run/usbmuxd,mode=777,reuseaddr,fork tcp:127.0.0.1:27016
+
+# 本机启动 usbmuxd_mitm.py 把 27106 转发到 27105(itunes)
+py -3 usbmuxd_mitm.py
