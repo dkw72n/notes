@@ -1,4 +1,24 @@
 
+=============================
+在远程 mac 上使用本地手机
+
++--------------------------------------------------+                +-------------------------------------------+
+| Windows                                          |                | macOS                                     |
+|                                                  |                |                                           |
+| +------------------------+        +------------+ |  ssh -Lxxx Mac | +------------------------------+  +-----+ |
+| |AppleMobileDeviceService+--------+usbmuxd_mitm+--------------------+socat /var/run/usbmuxd tcp:xxx+--+Xcode| |
+| +-------+----------------+        +------------+ |                | +------------------------------+  +-----+ |
+|         |                                        |                |                                           |
++--------------------------------------------------+                +-------------------------------------------+
+          |
+          | usb cable
+          |
+          |
+      +---+--+
+      |iPhone|
+      +------+
+
+"""
 # 重命名 usbmuxd
 sudo mv /var/run/usbmuxd /var/run/usbmuxx 
 
@@ -10,3 +30,16 @@ sudo socat -t100 UNIX-LISTEN:/var/run/usbmuxd,mode=777,reuseaddr,fork tcp:127.0.
 
 # 本机启动 usbmuxd_mitm.py 把 27106 转发到 27105(itunes)
 py -3 usbmuxd_mitm.py
+"""
+
+
+==============================
+
+# ssl 流量抓取 (基于frida)
+  前置条件:
+    pip install frida
+    pip install hexdump
+    关闭SIP: https://apple.stackexchange.com/questions/208478/how-do-i-disable-system-integrity-protection-sip-aka-rootless-on-macos-os-x
+    
+python3 ssl_logger.py -pcap a.pcap -verbose Xcode
+
