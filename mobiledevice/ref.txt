@@ -1,0 +1,5 @@
+[Understanding usbmux and the iOS lockdown service]
+https://web.archive.org/web/20190628025346/https://medium.com/@jon.gabilondo.angulo_7635/understanding-usbmux-and-the-ios-lockdown-service-7f2a1dfd07ae
+
+[usbmuxd2:A socket daemon written in C++ to multiplex connections from and to iOS devices over USB and WIFI]
+https://github.com/tihmstar/usbmuxd2/blob/master/usbmuxd2/Devices/WIFIDevice.cpp
