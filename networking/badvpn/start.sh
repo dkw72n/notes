@@ -1,0 +1,1 @@
+./tun2socks-linux-amd64 -tunAddr 172.18.0.2 -tunGw 172.18.0.1 -tunMask 255.255.255.0 -proxyServer 127.0.0.1:10101 -proxyType socks -loglevel debug
