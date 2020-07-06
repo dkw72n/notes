@@ -1,0 +1,9 @@
+windows:
+
+双击 port_forward_wsl2.ps1
+
+linux:
+
+in ~/.bashrc:
+export ADB_SERVER_SOCKET=tcp:172.27.48.1:7305
+
