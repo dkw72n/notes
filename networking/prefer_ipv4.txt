@@ -1,0 +1,16 @@
+> open /etc/gai.conf
+
+> find
+
+```
+#
+#    For sites which prefer IPv4 connections change the last line to
+#
+#precedence ::ffff:0:0/96  100
+```
+
+> uncomment `precedence ::ffff:0:0/96  100`
+
+
+
+
