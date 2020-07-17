@@ -1,0 +1,18 @@
+# what is it?
+https://iphonedevwiki.net/index.php/Dyld_shared_cache
+
+# pull
+
+* jailed
+https://github.com/npupyshev/dt.fetchsymbols/blob/master/main.c
+
+* jailbroken
+scp -P2222 root@127.0.0.1:/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e .
+
+# extraction
+git clone https://github.com/madordie/dsc_extractor.git
+cd dsc_extractor
+git submodule update --init
+clang++ dyld/launch-cache/dsc_extractor.cpp dyld/launch-cache/dsc_iterator.cpp -o dsc_extractor
+./dsc_extractor ../dyld_shared_cache_arm64e arm64e
+
