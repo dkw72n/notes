@@ -1,0 +1,1 @@
+ssh -t -R27015:127.0.0.1:27015 MacVM2 "sudo /usr/local/bin/socat -t100 UNIX-LISTEN:/var/run/usbmuxd,mode=777,reuseaddr,fork tcp:127.0.0.1:27015"

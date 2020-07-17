@@ -43,3 +43,14 @@ py -3 usbmuxd_mitm.py
     
 python3 ssl_logger.py -pcap a.pcap -verbose Xcode
 
+
+# more
+
+sudo socat -t100 -x -v UNIX-LISTEN:/var/run/usbmuxd,mode=777,reuseaddr,fork UNIX-CONNECT:/var/run/usbmuxx > usbmuxd.hexdump
+python3 ssl_logger.py -pcap usbmuxd.pcap usbmuxd
+python3 ssl_logger.py -pcap xcode.pcap Xcode
+python3 ssl_logger.py -pcap instrument.pcap Instrument
+wireshark
+
+# oneliner
+ssh -t -R27015:127.0.0.1:27015 MacVM2 "sudo /usr/local/bin/socat -t100 UNIX-LISTEN:/var/run/usbmuxd,mode=777,reuseaddr,fork tcp:127.0.0.1:27015"
