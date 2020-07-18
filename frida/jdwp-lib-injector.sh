@@ -1,6 +1,12 @@
 #!/bin/bash
 
 # use with: git@github.com:ikoz/jdwp-lib-injector.git
+# usage: ./script dso package_name
+
+if ! test -d jdwp-lib-injector; then
+  git clone git@github.com:ikoz/jdwp-lib-injector.git
+fi
+
 echo "[**] Android JDWP library injector by @ikoz"
 if [ ! -f "$1" ]
   then
@@ -27,6 +33,7 @@ jdwp_pid=`adb shell pidof $2`
 echo "[**] pidof $2 is ${jdwp_pid}"
 
 debuggable_pid=`timeout 3 adb jdwp|grep ${jdwp_pid}`
+adb shell am clear-debug-app
 if test -z ${debuggable_pid}; then
   echo "[**] Is $2 really debuggable?"
   exit 1
