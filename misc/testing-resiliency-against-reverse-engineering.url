@@ -1,0 +1,128 @@
+https://web.archive.org/web/20190805055234/https://mobile-security.gitbook.io/mobile-security-testing-guide/android-testing-guide/0x05j-testing-resiliency-against-reverse-engineering
+
+Common Root Detection Methods
+
+  SafetyNet
+
+  Programmatic Detection
+
+    File existence checks
+      
+      /system/app/Superuser.apk
+      /system/etc/init.d/99SuperSUDaemon
+      /dev/com.koushikdutta.superuser.daemon/
+      /system/xbin/daemonsu
+
+      /sbin/su  
+      /system/bin/su  
+      /system/bin/failsafe/su  
+      /system/xbin/su  
+      /system/xbin/busybox  
+      /system/sd/xbin/su  
+      /data/local/su  
+      /data/local/xbin/su  
+      /data/local/bin/su
+
+
+    Executing su and other commands
+
+    Checking running processes
+
+    Checking installed app packages
+
+      com.thirdparty.superuser
+      eu.chainfire.supersu
+      com.noshufou.android.su
+      com.koushikdutta.superuser
+      com.zachspong.temprootremovejb
+      com.ramdroid.appquarantine
+      com.topjohnwu.magisk
+
+    Checking for writable partitions and system directories
+
+    Checking for custom Android builds
+
+
+Anti-Debugging
+
+  Anti-JDWP-Debugging Examples
+    
+    Checking the Debuggable Flag in ApplicationInfo
+      
+      context.getApplicationContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE
+
+    isDebuggerConnected
+      
+      Debug.isDebuggerConnected()
+
+      gDvm.debuggerConnected || gDvm.debuggerActive
+
+    Timer Checks
+
+    Messing with JDWP-Related Data Structures
+
+  
+  Anti-Native-Debugging Examples
+    
+    Checking TracerPid
+
+    Ptrace variations
+
+
+File Integrity Checks
+
+Reverse Engineering Tools Detection
+
+  Example: Ways to Detect Frida
+  
+    ps
+
+    port 27042
+
+    D-Bus AUTH 
+
+    /proc/self/maps
+
+Emulator Detection
+
+Run Time Integrity Checks
+
+  Detecting tampering with the Java Runtime
+
+    e.getStackTrace()
+
+      count of com.android.internal.os.ZygoteInit
+
+      com.saurik.substrate.MS$2
+
+      de.robv.android.xposed.XposedBridge
+
+      de.robv.android.xposed.XposedBridge
+
+  Detecting Native Hooks
+
+Obfuscation
+
+Device Binding 
+
+  Static Analysis
+    
+    Build.SERIAL without Build.getSerial
+
+    htc.camera.sensor.front_SN for HTC devices
+
+    persist.service.bdroid.bdadd
+    
+    Settings.Secure.bluetooth_address
+
+
+  Dynamic Analysis
+
+  Google Instance ID
+
+  IMEI & Serial
+    
+  SSAID
+
+
+
