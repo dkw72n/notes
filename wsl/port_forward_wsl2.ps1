@@ -43,3 +43,5 @@ for( $i = 0; $i -lt $ports.length; $i++ ){
 
 iex "netsh interface portproxy delete v4tov4 listenport=$adb_port_in_wsl listenaddress=$wsl_addr";
 iex "netsh interface portproxy add v4tov4 listenport=$adb_port_in_wsl listenaddress=$wsl_addr connectport=$adb_port connectaddress=127.0.0.1";
+
+iex "netsh interface portproxy show all"; # echo back

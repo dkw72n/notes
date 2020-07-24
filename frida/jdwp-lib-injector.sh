@@ -2,10 +2,16 @@
 
 # used with: git@github.com:ikoz/jdwp-lib-injector.git
 # usage: ./script dso package_name
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 set -x
+(
+cd ${DIR}
 if ! test -d jdwp-lib-injector; then
   git clone git@github.com:ikoz/jdwp-lib-injector.git
 fi
+)
 
 echo "[**] Android JDWP library injector by @ikoz"
 if [ ! -f "$1" ]; then
@@ -32,7 +38,12 @@ adb push $1 /data/local/tmp/
 #sleep 1
 #kill -9 $!
 
-jdwp_pid=`adb shell pidof $2`
+if [[ `adb shell getprop ro.build.version.sdk` < 24 ]]; then
+  jdwp_pid=`adb shell ps | grep $2 | awk '{print $2}'`
+else
+  jdwp_pid=`adb shell pidof $2`
+fi
+
 echo "[**] pidof $2 is ${jdwp_pid}"
 
 debuggable_pid=`timeout 3 adb jdwp|grep ${jdwp_pid}`
@@ -45,8 +56,9 @@ fi
 echo "[**] Will forward tcp:8700 to jdwp:$jdwp_pid"
 adb forward tcp:8700 jdwp:$jdwp_pid
 echo "[**] Starting jdwp-shellifier.py to load library"
-python jdwp-lib-injector/jdwp-shellifier.py --target 127.0.0.1 --port 8700 --break-on android.app.Application.onCreate --loadlib `basename $1`
-echo "[**] Running frida-ps -U. If you see 'Gadget' then all worked fine!"
+python ${DIR}/jdwp-lib-injector/jdwp-shellifier.py --target 127.0.0.1 --port 8700 --break-on android.app.Application.onCreate --loadlib `basename $1`
+#python ${DIR}/jdwp-lib-injector/jdwp-shellifier.py --target 127.0.0.1 --port 8700 --break-on android.app.ContextWrapper.attachBaseContext --loadlib `basename $1`
+#echo "[**] Running frida-ps -U. If you see 'Gadget' then all worked fine!"
 #frida-ps -U
-timeout 5 adb logcat *:S tpmm:V
+timeout 5 adb logcat *:S tpmm:V AEE/AED:V
 exit 0
