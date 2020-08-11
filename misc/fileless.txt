@@ -1,0 +1,7 @@
+memfd_create
+
+Anything version 3.17 (released 05 October 2014) or later will work.[2]
+
+
+[1] https://man7.org/linux/man-pages/man2/memfd_create.2.html
+[2] https://magisterquis.github.io/2018/03/31/in-memory-only-elf-execution.html

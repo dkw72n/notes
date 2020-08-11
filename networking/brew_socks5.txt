@@ -1,0 +1,11 @@
+brew with a socks5 proxy [ref: https://lencerf.github.io/post/2015-10-03-brew-with-a-socks5-proxy/]
+
+October 3, 2015
+
+http requests of git go through a socks5 proxy
+
+git config --global http.proxy 'socks5://127.0.0.1:1081'
+
+Since homebrew doanloads files using curl, set a socks proxy for curl: 
+
+just add proxy=socks5://127.0.0.1:1081 to ~/.curlrc.
