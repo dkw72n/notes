@@ -1,0 +1,833 @@
+00000000 DTAllocationsRecorder struc ; (sizeof=0x80, align=0x8, copyof_427)
+00000000 super           NSObject ?
+00000008 _shmem          dq ?                    ; offset
+00000010 _processingQueue dq ?                   ; offset
+00000018 _serialEventQueue dq ?                  ; offset
+00000020 _partialEvent   dq ?                    ; offset
+00000028 _fullEvent      dq ?                    ; offset
+00000030 _partialSize    dd ?
+00000034 _partialFilled  dd ?
+00000038 _eventTotal     dd ?
+0000003C                 db ? ; undefined
+0000003D                 db ? ; undefined
+0000003E                 db ? ; undefined
+0000003F                 db ? ; undefined
+00000040 _bytesTotal     dq ?
+00000048 _targetTask     dd ?
+0000004C _stopCollection dd ?
+00000050 _threadToKeyFramesMap map<unsigned long long, std::__1::map<unsigned int, OAKeyFrame *, std::__1::less<unsigned int>, std::__1::allocator<std::__1::pair<const unsigned int, OAKeyFrame *> > >, std::__1::less<unsigned long long>, std::__1::allocator<std::__1::pair<const unsigned long long, std::__1::map<unsigned int, OAKeyFrame *, std::__1::less<unsigned int>, std::__1::allocator<std::__1::pair<const unsigned int, OAKeyFrame *> > > > > > ?
+00000068 _readStackLogsUponAttach db ?
+00000069                 db ? ; undefined
+0000006A                 db ? ; undefined
+0000006B                 db ? ; undefined
+0000006C _sharedMemorySize dd ?
+00000070 _eventHandler   dq ?                    ; offset
+00000078 _bufferHandler  dq ?                    ; offset
+00000080 DTAllocationsRecorder ends
+
+void __fastcall buffer_handler(_QWORD *a1, _DWORD *a2, __int64 a3)
+{
+// a1: block_descriptor
+//  0 [0]: _NSConcreteStackBlock
+//  8 [1]: 3254779904LL
+//  16[2]: buffer_handler
+//  24[3]: __block_descriptor_56_ea8_32bs40s_e13_v20__0r_v8I16l
+//  32[4]: eventHandler
+//  40[5]: DTAllocationsRecorder
+//  48[6]: SEL(_startWithError)
+  _QWORD *v3; // r14 
+  unsigned int v4; // ebx
+  _DWORD *v5; // r15
+  __int64 v6; // rax
+  __int64 v7; // rdi
+  int v8; // ecx
+  unsigned int v9; // edx
+  unsigned int v10; // esi
+  unsigned int v11; // edx
+  size_t v12; // r12
+  int v13; // er12
+  __int64 v14; // rdi
+  unsigned int v15; // eax
+  __int64 v16; // rdx
+  int v17; // eax
+  __int64 v18; // rdi
+  __int64 v19; // rsi
+  __int64 v20; // rax
+  unsigned int v21; // ecx
+  __int64 v22; // rcx
+  unsigned int v23; // edx
+  unsigned int v24; // esi
+  unsigned int v25; // edx
+  id v26; // rax
+  __CFString *v27; // rdi
+  id v28; // rax
+  id v29; // rax
+  __int64 v30; // rcx
+  _DWORD *v31; // rsi
+  id v32; // rax
+  __CFString *v33; // rdi
+  id v34; // rax
+  __int64 v35; // [rsp+8h] [rbp-68h]
+  __CFString *v36; // [rsp+38h] [rbp-38h]
+  __CFString *v37; // [rsp+38h] [rbp-38h]
+  __CFString *v38; // [rsp+40h] [rbp-30h]
+  id v39; // [rsp+40h] [rbp-30h]
+  __CFString *v40; // [rsp+40h] [rbp-30h]
+  id v41; // [rsp+40h] [rbp-30h]
+  
+  len = a3;
+  v3 = a1;
+  if ( a2 && (v4 = len) != 0 ) // 数据合法
+  {
+    v5 = a2;
+    *(_QWORD *)(a1[5] + 64LL) += (unsigned int)len; // _bytesTotal += buffer.length
+    do
+    {
+      v6 = v3[5]; // v6 is DTAllocationsRecorder
+      if ( SHIDWORD(v6->_threadToKeyFramesMap.__tree_.__begin_node_) > 1 )
+        break;
+      v7 = v6->_partialFilled;
+      if ( len < 0x30 || (_DWORD)partialFilled ) // 48字节
+        goto LABEL_49;
+        
+      // 消息 大于 48 字节, 且有完整头部
+      v8 = v5[2]; // 8-12 字节
+      v9 = v5[3]; // 12-16 字节
+      v10 = (unsigned __int16)v9; // 12-14 字节
+      v11 = v9 >> 16; // 14-16字节
+      if ( _bittest(&v8, 0x17u) ) // v8 & (1 << 0x17)
+        v10 = v11;
+      LODWORD(v12) = 8 * v10 + 56; // v10 是某种长度, 8 * v10 + 56 => 包体总长度
+      if ( v4 < (unsigned int)v12 ) // 长度不够
+      {
+LABEL_49:
+        v13 = *(_DWORD *)(v6 + 48);
+        if ( v13 )
+        {
+          v12 = (unsigned int)(v13 - v7);
+          if ( (unsigned int)v12 >= v4 )
+            v12 = v4;
+          memcpy((void *)(*(_QWORD *)(v6 + 32) + v7), v5, v12);
+          *(_DWORD *)(v3[5] + 52LL) += v12;
+          v14 = v3[5];
+          v15 = *(_DWORD *)(v14 + 52);
+          if ( v15 >= 0x1031 )
+            __41__DTAllocationsRecorder__startWithError___block_invoke_cold_2();
+          v5 = (_DWORD *)((char *)v5 + v12);
+          if ( v15 == *(_DWORD *)(v14 + 48) )
+          {
+            v16 = *(_QWORD *)(v14 + 32);
+            v17 = *(_DWORD *)(v16 + 8);
+            if ( _bittest(&v17, 0x16u) )
+            {
+              objc_msgSend((id)v14, "addKeyFrame:");
+              v18 = v3[4];
+              v19 = *(_QWORD *)(v3[5] + 32LL);
+            }
+            else if ( _bittest(&v17, 0x17u) )
+            {
+              objc_msgSend((id)v14, "createFullEventFromDelta:withEvent:", v16, *(_QWORD *)(v14 + 40));
+              v18 = v3[4];
+              v19 = *(_QWORD *)(v3[5] + 40LL);
+            }
+            else
+            {
+              v18 = v3[4];
+              v19 = v16;
+            }
+            (*(void (__fastcall **)(__int64, __int64))(v18 + 16))(v18, v19);
+            ++*(_DWORD *)(v3[5] + 56LL);
+            *(_DWORD *)(v3[5] + 48LL) = 0;
+            *(_DWORD *)(v3[5] + 52LL) = 0;
+          }
+        }
+        else
+        {
+          v12 = (unsigned int)(48 - v7);
+          if ( (unsigned int)v12 >= v4 )
+            v12 = v4;
+          memcpy((void *)(*(_QWORD *)(v6 + 32) + v7), v5, v12);
+          *(_DWORD *)(v3[5] + 52LL) += v12;
+          v20 = v3[5];
+          v21 = *(_DWORD *)(v20 + 52);
+          if ( v21 >= 0x31 )
+            __41__DTAllocationsRecorder__startWithError___block_invoke_cold_1();
+          if ( v21 == 48 )
+          {
+            v22 = *(_QWORD *)(v20 + 32);
+            v23 = *(_DWORD *)(v22 + 12);
+            v24 = (unsigned __int16)v23;
+            v25 = v23 >> 16;
+            if ( _bittest((const signed __int32 *)(v22 + 8), 0x17u) )
+              v24 = v25;
+            *(_DWORD *)(v20 + 48) = 8 * v24 + 56;
+            v20 = v3[5];
+          }
+          v5 = (_DWORD *)((char *)v5 + v12);
+          if ( *(_DWORD *)(v20 + 48) >= 0x1031u )
+          {
+            v26 = objc_msgSend(
+                    &OBJC_CLASS___NSString,
+                    "stringWithUTF8String:",
+                    "/Library/Caches/com.apple.xbs/Sources/DVTInstrumentsFrameworks/DVTInstrumentsFrameworks-64523.192/DT"
+                    "AllocationsRecorder.mm");
+            v38 = objc_retainAutoreleasedReturnValue(v26);
+            v27 = v38;
+            if ( !v38 )
+              v27 = CFSTR("<Unknown File>");
+            v36 = objc_retain(v27);
+            objc_release(v38);
+            v28 = objc_msgSend(&OBJC_CLASS___NSAssertionHandler, "currentHandler");
+            v29 = objc_retainAutoreleasedReturnValue(v28);
+            v30 = v3[5];
+            LODWORD(v35) = *(_DWORD *)(v30 + 48);
+            v39 = v29;
+            objc_msgSend(
+              v29,
+              "handleFailureInMethod:object:file:lineNumber:description:",
+              v3[6],
+              v30,
+              v36,
+              326LL,
+              CFSTR("Fatal: partial event too large (%d), stream malformed."),
+              v35);
+            objc_release(v39);
+            objc_release(v36);
+          }
+        }
+      }
+      else // 长度够了
+      {
+        if ( (unsigned int)v12 >= 0x1031 ) // 数据包大小 超过了 0x1030
+        {
+          v32 = objc_msgSend(
+                  &OBJC_CLASS___NSString,
+                  "stringWithUTF8String:",
+                  "/Library/Caches/com.apple.xbs/Sources/DVTInstrumentsFrameworks/DVTInstrumentsFrameworks-64523.192/DTAl"
+                  "locationsRecorder.mm");
+          v40 = objc_retainAutoreleasedReturnValue(v32);
+          v33 = v40;
+          if ( !v40 )
+            v33 = CFSTR("<Unknown File>");
+          v37 = objc_retain(v33);
+          objc_release(v40);
+          v34 = objc_msgSend(&OBJC_CLASS___NSAssertionHandler, "currentHandler");
+          LODWORD(v35) = 8 * v10 + 56;
+          v41 = objc_retainAutoreleasedReturnValue(v34);
+          objc_msgSend(
+            v41,
+            "handleFailureInMethod:object:file:lineNumber:description:",
+            v3[6],
+            v3[5],
+            v37,
+            353LL,
+            CFSTR("Fatal: whole event too large (%d), stream malformed."),
+            v35);
+          objc_release(v41);
+          objc_release(v37);
+          v8 = v5[2];
+        }
+        if ( _bittest(&v8, 0x16u) ) // v8 & (1 << 0x16)
+        {
+          // 关键帧
+          objc_msgSend((id)v3[5], "addKeyFrame:", v5);
+          v31 = v5;
+        }
+        else
+        {
+          v31 = v5;
+          if ( _bittest(&v8, 0x17u) )
+          {
+            objc_msgSend((id)v3[5], "createFullEventFromDelta:withEvent:", v5, *(_QWORD *)(v3[5] + 40LL)); // (buffer, _fullEvent)
+            v31 = *(_DWORD **)(v3[5] + 40LL);
+          }
+        }
+        (*(void (__fastcall **)(_QWORD, _DWORD *))(v3[4] + 16LL))(v3[4], v31); // eventHandler(eventHandler, buffer)
+        ++*(_DWORD *)(v3[5] + 56LL); // _eventTotal++
+        v5 = (_DWORD *)((char *)v5 + (unsigned int)v12);
+      }
+      v4 -= v12; // next cursor
+    }
+    while ( v4 );
+  }
+  else
+  {
+    (*(void (__fastcall **)(_QWORD, _QWORD, __int64))(a1[4] + 16LL))(a1[4], 0LL, a3);
+  }
+}
+
+
+
+void __cdecl -[DTAllocationsRecorder addKeyFrame:](DTAllocationsRecorder *self, SEL a2, $KeyFrame *a3)
+{
+  $KeyFrame *v3; // r12
+  unsigned int v4; // er13
+  unsigned __int64 v5; // rax
+  unsigned __int64 v6; // rcx
+  __compressed_pair<T> *v7; // rbx
+  char *v8; // rax
+  __int64 v9; // r14
+  __int64 *v10; // rcx
+  __int64 *v11; // rax
+  __int64 v12; // r14
+  __int64 v13; // rcx
+  char *v14; // r14
+  int v15; // eax
+  __int64 v16; // rcx
+  __int64 v17; // rax
+  __int64 *v18; // [rsp+0h] [rbp-70h]
+  _QWORD *v19; // [rsp+8h] [rbp-68h]
+  __int64 v20; // [rsp+10h] [rbp-60h]
+  unsigned __int64 v21; // [rsp+18h] [rbp-58h]
+  char *v22; // [rsp+20h] [rbp-50h]
+  _QWORD *v23; // [rsp+28h] [rbp-48h]
+  __int64 v24; // [rsp+30h] [rbp-40h]
+  DTAllocationsRecorder *v25; // [rsp+38h] [rbp-38h]
+  char *v26; // [rsp+40h] [rbp-30h]
+
+  v3 = a3;
+  v4 = LOBYTE(a3->var1);
+  v5 = self->_threadToKeyFramesMap.__tree_.__pair3_.__value_;
+  if ( !v5 )
+    goto LABEL_29;
+  v6 = a3->var5;
+  v7 = &self->_threadToKeyFramesMap.__tree_.__pair3_;
+  do
+  {
+    if ( *(_QWORD *)(v5 + 32) >= v6 )
+      v7 = (__compressed_pair<T> *)v5;
+    v5 = *(_QWORD *)(v5 + 8LL * (*(_QWORD *)(v5 + 32) < v6));
+  }
+  while ( v5 );
+  if ( v7 != &self->_threadToKeyFramesMap.__tree_.__pair3_ && v6 >= v7[4].__value_ )
+  {
+    v16 = v7[6].__value_;
+    if ( !v16 )
+      goto LABEL_30;
+    v17 = (__int64)&v7[6];
+    do
+    {
+      if ( *(_DWORD *)(v16 + 32) >= v4 )
+        v17 = v16;
+      v16 = *(_QWORD *)(v16 + 8LL * (*(_DWORD *)(v16 + 32) < v4));
+    }
+    while ( v16 );
+    if ( (__compressed_pair<T> *)v17 != &v7[6]
+      && v4 >= *(_DWORD *)(v17 + 32) )
+    {
+      v14 = *(char **)(v17 + 40);
+    }
+    else
+    {
+LABEL_30:
+      v14 = (char *)calloc(1uLL, 0x1010uLL);
+      LODWORD(v21) = v4;
+      v22 = v14;
+      std::__1::__tree::__emplace_unique_key_args(
+        (__int64)&v7[5],
+        (unsigned int *)&v21,
+        (__int64)&v21);
+    }
+  }
+  else
+  {
+LABEL_29:
+    v25 = self;
+    v20 = 0LL;
+    v19 = 0LL;
+    v18 = (__int64 *)&v19;
+    v8 = (char *)calloc(1uLL, 0x1010uLL);
+    LODWORD(v21) = v4;
+    v26 = v8;
+    v22 = v8;
+    std::__1::__tree::__emplace_unique_key_args(
+      (__int64)&v18,
+      (unsigned int *)&v21,
+      (__int64)&v21);
+    v21 = v3->var5;
+    v24 = 0LL;
+    v23 = 0LL;
+    v22 = (char *)&v23;
+    v9 = (__int64)v18;
+    if ( v18 != (__int64 *)&v19 )
+    {
+      do
+      {
+        std::__1::__tree::__emplace_hint_unique_key_args(
+          (__int64 **)&v22,
+          (__int64)&v23,
+          (unsigned int *)(v9 + 32),
+          (__int64 *)(v9 + 32));
+        v10 = *(__int64 **)(v9 + 8);
+        if ( v10 )
+        {
+          do
+          {
+            v11 = v10;
+            v10 = (__int64 *)*v10;
+          }
+          while ( v10 );
+        }
+        else
+        {
+          v11 = *(__int64 **)(v9 + 16);
+          if ( *v11 != v9 )
+          {
+            v12 = v9 + 16;
+            do
+            {
+              v13 = *(_QWORD *)v12;
+              v11 = *(__int64 **)(*(_QWORD *)v12 + 16LL);
+              v12 = *(_QWORD *)v12 + 16LL;
+            }
+            while ( *v11 != v13 );
+          }
+        }
+        v9 = (__int64)v11;
+      }
+      while ( v11 != (__int64 *)&v19 );
+    }
+    std::__1::__tree::__emplace_unique_key_args(
+      (__int64)&v25->_threadToKeyFramesMap.__tree_.__pair1_,
+      &v21,
+      (__int64)&v21);
+    std::__1::__tree::destroy(
+      (__int64)&v22,
+      v23);
+    std::__1::__tree::destroy(
+      (__int64)&v18,
+      v19);
+    v14 = v26;
+  }
+  v3->var1 &= 0xFF0000FF;
+  v15 = 512 - v3->var2;
+  *((_DWORD *)v14 + 2) = v15;
+  memcpy(&v14[8 * v15 + 16], &v3[1], 8LL * v3->var2);
+}
+
+__int64 __fastcall _OARecordFinalEvent(unsigned int what, __int64 a2, void *ptr_a, __int64 a4, unsigned __int64 a5, const char *name, int a7)
+{
+  const char *v7; // r13
+  __int64 v8; // r12
+  void *v9; // rbx
+  unsigned int what_1; // er14
+  int v12; // eax
+  int v13; // ecx
+  void ***v14; // rax
+  void *v15; // rax
+  void *v16; // rax
+  int v17; // er12
+  void *ptr_1; // r15
+  int what__; // er12
+  pthread_t v20; // rax
+  OAEvent *event_1; // rbx
+  unsigned int v22; // eax
+  signed __int64 v23; // rdx
+  __int64 v24; // rdx
+  unsigned int v25; // eax
+  __int64 **v26; // rax
+  unsigned int v27; // ecx
+  __int64 *v28; // rax
+  void *v29; // rbx
+  void *tls_last_alloc_addr; // rax
+  void *v31; // rax
+  bool v32; // zf
+  void *ptr_2; // rbx
+  size_t size_5; // rax
+  __int64 type_1; // rax
+  unsigned int v36; // edi
+  void *ptr_3; // rdx
+  unsigned __int64 v38; // r8
+  const char *type_2; // r9
+  unsigned int v40; // er11
+  char v41; // r10
+  __int64 v42; // rdi
+  unsigned __int64 v43; // r8
+  unsigned __int64 v44; // rsi
+  __int64 *v45; // rdx
+  __int64 v46; // rsi
+  __int64 v47; // rdx
+  __int64 var4; // rax
+  signed __int64 v49; // rax
+  size_t size_2; // rax
+  size_t size_1; // rax
+  signed __int64 size_3; // rcx
+  char v53; // al
+  signed __int64 size_4; // rcx
+  size_t v55; // rax
+  __int64 event_end_mark; // [rsp+0h] [rbp-1070h]
+  OAEvent *event_2; // [rsp+8h] [rbp-1068h]
+  __int64 what_; // [rsp+10h] [rbp-1060h]
+  __int64 v59; // [rsp+18h] [rbp-1058h]
+  __int64 v60; // [rsp+20h] [rbp-1050h]
+  void *ptr; // [rsp+28h] [rbp-1048h]
+  unsigned int v62; // [rsp+34h] [rbp-103Ch]
+  unsigned __int64 v63; // [rsp+38h] [rbp-1038h]
+  __int64 v64[512]; // [rsp+40h] [rbp-1030h]
+
+  v63 = a5;
+  v59 = a2;
+  if ( !__CFOASafe )
+    return __stack_chk_guard;
+  v7 = name;
+  v8 = a4;
+  v9 = ptr_a;
+  what_1 = what;
+  if ( _OAIsReEntrantCall() )
+    return __stack_chk_guard;
+  if ( pthread_getspecific(__temporarily_ignore_thread) )
+    return __stack_chk_guard;
+  v12 = 1 << what;
+  v13 = __OAAllocationEventMask;
+  if ( !_bittest(&v13, what) )
+    return __stack_chk_guard;
+  what_ = what & 0xFFFFFF;
+  if ( v12 & 0x10405008 )
+  {
+    v14 = (void ***)pthread_getspecific(__avoid_dupes_key);
+    if ( v14 )
+    {
+      v15 = **v14;
+      goto LABEL_13;
+    }
+LABEL_12:
+    v15 = 0LL;
+    goto LABEL_13;
+  }
+  if ( v12 & 0x2000A000 )
+  {
+    v16 = pthread_getspecific(__avoid_dupes_key);
+    if ( v16 )
+    {
+      v15 = *(void **)(*(_QWORD *)v16 + 8LL);
+      goto LABEL_13;
+    }
+    goto LABEL_12;
+  }
+  if ( (_DWORD)what_ != 16 )
+    goto LABEL_14;
+  v15 = pthread_getspecific(__oa_thread_last_allocation_address_key);
+LABEL_13:
+  if ( v15 == v9 )
+    return __stack_chk_guard;
+LABEL_14:
+  v60 = v8;
+  v17 = __OAAllocationPID;
+  if ( v17 != getpid() )
+  {
+    __CFOASafe = 0;
+    return __stack_chk_guard;
+  }
+  event_2 = (OAEvent *)(&event_end_mark - 518);
+  ptr_1 = v9;
+  what__ = what_;
+  if ( __oa_thread_specific_ready == 1 && (unsigned int)(what_ - 23) >= 5 && (_DWORD)what_ != 30 )
+  {
+    v29 = 0LL;
+    if ( (_DWORD)what_ == 18 )
+      v29 = (void *)v63;
+    tls_last_alloc_addr = pthread_getspecific(__oa_thread_last_allocation_address_key);
+    if ( tls_last_alloc_addr )
+    {
+      ptr = tls_last_alloc_addr;
+      pthread_setspecific(__oa_thread_last_allocation_address_key, 0LL);
+      v31 = ptr;
+      if ( ptr == v29 )
+        v31 = ptr_1;
+      v32 = v29 == 0LL;
+      ptr_2 = v31;
+      if ( v32 )
+        ptr_2 = ptr;
+      if ( what__ != 11 )
+      {
+        if ( ptr_2 )
+        {
+          size_5 = malloc_size(ptr_2);
+          if ( size_5 )
+          {
+            type_1 = _get_type_for_last_allocation(ptr_2, size_5);
+            if ( type_1 )
+            {
+              v36 = 11;
+              ptr_3 = ptr_2;
+              v38 = 0LL;
+              type_2 = (const char *)type_1;
+_L_CALL_SELF:
+              _OARecordFinalEvent(v36, 0LL, ptr_3, 0LL, v38, type_2, 0);
+              goto LABEL_17;
+            }
+            v38 = *(_QWORD *)ptr_2;
+            if ( (unsigned __int64)(*(_QWORD *)ptr_2 - 0x100000000LL) >> 32 <= 0x7FFE && !(v38 & 7) )
+            {
+              if ( (v38 - 140733193388032LL) >> 21 < 0x7FF
+                || (ptr = *(void **)ptr_2, v55 = malloc_size(ptr), v38 = (unsigned __int64)ptr, !v55) )
+              {
+                v36 = 20;
+                ptr_3 = ptr_2;
+                type_2 = 0LL;
+                goto _L_CALL_SELF;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+LABEL_17:
+  v20 = pthread_self();
+  event_1 = event_2;
+  event_2->var5 = (unsigned __int64)v20;
+  event_1->flag = what_1;
+  event_1->var3 = (unsigned __int64)ptr_1 ^ 0x5555;
+  event_1->var6 = 0LL;
+  event_1->var4 = 0LL;
+  event_1->count = 0;
+  if ( (unsigned int)(what__ - 10) >= 2 )
+  {
+    if ( what__ == 20 )
+    {
+_L_UPDATE_VAR4_XOR:
+      var4 = v63 ^ 0x5555;
+_L_SET_VAR4:
+      event_1->var4 = var4;
+_L_GEN_DELTA_EVENT:
+      _OAGenerateDeltaEvent(event_1);
+      v53 = _writeEventToSharedMemory(event_1);
+      if ( what__ == 21 && v53 )
+        exit(1);
+      if ( v53 && what__ == 16 && __oa_thread_specific_ready & 1 )
+        pthread_setspecific(__oa_thread_last_allocation_address_key, ptr_1);
+      return __stack_chk_guard;
+    }
+    if ( what__ != 27 )
+    {
+      thread_stack_pcs((__int64)v64, 511LL, (__int64)&v62);
+      v26 = (__int64 **)pthread_getspecific(__replacement_frame_stack);
+      v27 = 0;
+      if ( v26 )
+        v28 = *v26;
+      else
+        v28 = 0LL;
+      v40 = v62;
+      if ( a7 + 1 < v62 )
+      {
+        v41 = __oa_fixup_stacktraces;
+        v42 = (unsigned int)(a7 + 1);
+        v27 = 0;
+        v43 = __injection_base;
+        do
+        {
+          v44 = v64[v42];
+          if ( v28 && v41 && v44 >= v43 )
+          {
+            v45 = 0LL;
+            if ( __injection_end )
+              v45 = &__injection_base;
+            if ( v44 < (unsigned __int64)v45 )
+            {
+              v46 = *v28;
+              v28 = (__int64 *)v28[2];
+              v44 = v46 + 1;
+            }
+          }
+          if ( v44 >= 0x1000 )
+          {
+            v47 = (int)v27++;
+            event_1->var7[v47] = v44;
+          }
+          ++v42;
+        }
+        while ( (unsigned int)v42 < v40 );
+      }
+      v62 = v27;
+      event_1->var7[v27] = v27;
+      event_1->count = v27;
+LABEL_60:
+      switch ( what__ )
+      {
+        case 3:
+        case 19:
+        case 22:
+        case 25:
+          goto _L_GEN_DELTA_EVENT;
+        case 12:
+        case 13:
+          event_1->var4 = v63;
+          v49 = v59;
+          goto _L_SET_VAR6;
+        case 14:
+        case 15:
+        case 28:
+        case 29:
+          if ( v63 < 0x100001 || ptr_1 == (void *)v63 )
+            goto _L_UPDATE_VAR4;
+          return __stack_chk_guard;
+        case 16:
+          if ( v59 )
+            size_1 = (*(__int64 (__fastcall **)(__int64, void *))(v59 + 16))(v59, ptr_1);
+          else
+            size_1 = malloc_size(ptr_1);
+          size_4 = v60;
+          if ( size_1 )
+            size_4 = size_1;
+          event_1->var6 = size_4;
+          goto _L_GEN_DELTA_EVENT;
+        case 18:
+          if ( v59 )
+            size_2 = (*(__int64 (__fastcall **)(__int64, void *))(v59 + 16))(v59, ptr_1);
+          else
+            size_2 = malloc_size(ptr_1);
+          size_3 = v60;
+          if ( size_2 )
+            size_3 = size_2;
+          event_1->var6 = size_3;
+          goto _L_UPDATE_VAR4_XOR;
+        case 20:
+          goto _L_UPDATE_VAR4_XOR;
+        case 23:
+        case 26:
+          v49 = v60;
+_L_SET_VAR6:
+          event_1->var6 = v49;
+          goto _L_GEN_DELTA_EVENT;
+        default:
+_L_UPDATE_VAR4:
+          var4 = v63;
+          goto _L_SET_VAR4;
+      }
+    }
+  }
+  if ( v7 && *v7 )
+  {
+    v22 = strlen(v7);
+    v23 = 255LL;
+    if ( v22 < 0xFF )
+      v23 = v22;
+    event_1->var6 = v23;
+    v24 = (unsigned int)(v23 + 1);
+    v25 = (unsigned int)v24 >> 3;
+    event_1->count = (unsigned int)v24 >> 3;
+    if ( v24 & 7 )
+    {
+      event_1->var7[v25] = 0LL;
+      event_1->count = v25 + 1;
+    }
+    __strlcpy_chk(event_1->var7, v7, v24, 4096LL);
+    goto LABEL_60;
+  }
+  return __stack_chk_guard;
+}
+
+void __fastcall _OAGenerateDeltaEvent(OAEvent *a1)
+{
+  OAEvent *v1; // r14
+  mach_vm_address_t v2; // r15
+  unsigned int v3; // eax
+  __int64 v4; // rbx
+  __int64 v5; // r8
+  signed int v6; // er13
+  int v7; // er12
+  int *v8; // r9
+  int v9; // edx
+  int v10; // ebx
+  __int64 v11; // rbx
+  __int64 v12; // rdi
+  __m128d v13; // xmm0
+  __int64 v14; // rcx
+  signed int v15; // edx
+  int v16; // ebx
+  int v17; // eax
+  mach_vm_address_t address; // [rsp+8h] [rbp-38h]
+  int *v19; // [rsp+10h] [rbp-30h]
+
+  if ( !a1->count )
+    return;
+  v1 = a1;
+  v2 = (mach_vm_address_t)pthread_getspecific(__keyframe_key);
+  v3 = a1->flag;
+  if ( (unsigned __int8)(v3 - 3) > 0x1Bu )
+    v4 = 0LL;
+  else
+    v4 = qword_5630[(char)(v3 - 3)]; // map [3, 0, 0, 0,   0, 0Ah, 0Bh, 0Eh,   0Fh, 4, 5, 0Ch,   0Dh, 0, 0, 1,   2, 10h, 9, 6,   11h, 12h, 13h, 14h,   15h, 7, 8, 16h]
+  if ( !v2 )
+  {
+    // 初始化 tls_keyframe_key
+    pthread_setspecific(__keyframe_key, (char *)&dword_0 + 1);
+    address = 0LL;
+    mach_vm_allocate(mach_task_self_, &address, 0x17170uLL, 167772161);
+    v2 = address;
+    pthread_setspecific(__keyframe_key, (const void *)address);
+    goto LABEL_16;
+  }
+  v5 = 4112 * v4;
+  if ( *(double *)(v2 + 4112 * v4) <= *(double *)&__keyFrameEventHorizon )
+  {
+LABEL_16:
+    v13 = _mm_sub_pd(
+            (__m128d)_mm_unpacklo_epi32((__m128i)mach_absolute_time(), (__m128i)xmmword_5610),
+            (__m128d)xmmword_5620);
+    v14 = v2 + 4112 * v4;
+    *(_QWORD *)v14 = (unsigned __int128)_mm_hadd_pd(v13, v13);
+    v15 = 512 - a1->count;
+    *(_DWORD *)(v14 + 8) = v15;
+    memcpy((void *)(v14 + 8LL * v15 + 16), a1->var7, 8LL * a1->count);
+    BYTE2(a1->flag) |= 0x40u;
+    return;
+  }
+  v6 = a1->count;
+  v7 = a1->count - 1;
+  v8 = (int *)(v2 + v5 + 8);
+  if ( v7 < 0 || (v9 = *(_DWORD *)(v2 + v5 + 8), v9 > 511) )
+  {
+    a1->flag = v3 | 0x800000;
+    v10 = 511;
+    if ( v7 >= 0 )
+    {
+LABEL_21:
+      v16 = v10 - v7;
+      *v8 = v16;
+      v1->count = (unsigned __int16)v16 | (v6 << 16);
+      return;
+    }
+  }
+  else
+  {
+    v10 = 511;
+    if ( *(_QWORD *)(v2 + v5 + 4104) != a1->var7[v7] )
+    {
+      v19 = (int *)(v2 + v5 + 8);
+LABEL_20:
+      memcpy((void *)(v5 + v2 + 8LL * (v10 - v7) + 16), v1->var7, 8LL * v6);
+      BYTE2(v1->flag) |= 0x80u;
+      v8 = v19;
+      goto LABEL_21;
+    }
+    v11 = 0LL;
+    while ( 1 )
+    {
+      v7 = v6 - 2;
+      if ( v6 - 2 < 0 || v11 + 511 <= v9 )
+        break;
+      v12 = *(_QWORD *)(v2 + v5 + 4096 + 8 * v11);
+      --v6;
+      --v11;
+      if ( v12 != v1->var7[v7] )
+      {
+        v19 = (int *)(v2 + v5 + 8);
+        v10 = v11 + 511;
+        v7 = v6 - 1;
+        goto LABEL_20;
+      }
+    }
+    v1->flag = v3 | 0x800000;
+    if ( v7 >= 0 )
+    {
+      v10 = v11 + 510;
+      --v6;
+      goto LABEL_21;
+    }
+  }
+  v17 = 512 - v1->count;
+  *v8 = v17;
+  v1->count = (unsigned __int16)v17;
+}
