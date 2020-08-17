@@ -1,0 +1,7 @@
+To allow debugger used over ssh:
+
+> /usr/sbin/DevToolsSecurity --enable
+
+Watch logs:
+
+> log stream --predicate 'process = "taskgated" OR (process = "kernel" AND eventMessage CONTAINS "macOSTaskPolicy")' --info
