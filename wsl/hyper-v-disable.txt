@@ -1,0 +1,12 @@
+从 WSL2 到 WSL1, 到成功启动第三方安卓模拟器
+先后尝试了:
+  - 在 "应用和功能" 中关闭
+  - dism 
+  - Disable-WindowsOptionalFeature
+不起作用, 直到:
+`bcdedit /set hypervisorlaunchtype off`
+
+
+====
+
+https://stackoverflow.com/questions/30496116/how-to-disable-hyper-v-in-command-line
