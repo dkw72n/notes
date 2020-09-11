@@ -3,10 +3,44 @@
 
 CComPtr<IDiaDataSource> PdbHelper::source;
 
+typedef HRESULT (*PFNDllGetClassObject)(
+    REFCLSID rclsid,
+    REFIID   riid,
+    LPVOID* ppv
+);
+
 std::unique_ptr<PdbHelper> PdbHelper::Load(const wchar_t* path) {
     if (!source) {
-        if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), reinterpret_cast<void**>(&source))))
-            return nullptr;
+        if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), reinterpret_cast<void**>(&source)))) {
+            fprintf(stderr, "[!] failed to CoCreateInstance, retry with LoadLibrary\n");
+            // try use it without registration
+            HMODULE hMsdia = LoadLibraryA("msdia140.dll");
+            if (!hMsdia) {
+                fprintf(stderr, "[!] failed to LoadLibraryA(\"msdia140.dll\"): 0x%x\n", GetLastError());
+                return nullptr;
+            }
+            // fprintf(stderr, "getaddr\n");
+            PFNDllGetClassObject pfnGetObject = (PFNDllGetClassObject)GetProcAddress(hMsdia, "DllGetClassObject");
+            if (!pfnGetObject) {
+                fprintf(stderr, "[!] failed to GetProcAddress(DllGetClassObject)\n");
+                FreeLibrary(hMsdia);
+                return nullptr;
+            }
+            // fprintf(stderr, "getobj\n");
+            CComPtr<IClassFactory> cf;
+            if (FAILED(pfnGetObject(CLSID_DiaSource, IID_IClassFactory, reinterpret_cast<void**>(&cf)))) {
+                fprintf(stderr, "[!] failed to DllGetClassObject\n");
+                FreeLibrary(hMsdia);
+                return nullptr;
+            }
+            // fprintf(stderr, "createobj\n");
+            if (FAILED(cf->CreateInstance(0, __uuidof(IDiaDataSource), reinterpret_cast<void**>(&source)))) {
+                fprintf(stderr, "[!] failed to CreateInstance\n");
+                FreeLibrary(hMsdia);
+                return nullptr;
+            }
+        }
+        fprintf(stderr, "[-] IDiaDataSource is successfully created\n");
     }
     std::unique_ptr<PdbHelper> ret(new PdbHelper(path));
     if (ret->session && ret->global) {
