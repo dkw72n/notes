@@ -1,0 +1,29 @@
+# 以 2.6.32 为例
+======
+
+1. 编译 glibc
+
+  选用了 2.23, 因为从 2.24 开始, 最低内核版本要求是 3.2.0
+  编译过程该了几处编译错误
+
+```patch
+#todo: patch here
+```
+
+2. 设置 LIBRARY_PATH 环境变量
+  
+  设置成编译安装后的目录
+
+3. std::thread 静态编译
+
+  参考 https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52590
+  需要设置参数 `-Wl,--whole-archive -lpthread -Wl,--no-whole-archive`
+  也就是 pthread 必须以 whole-archive 的方式链接
+
+4. 查看 elf 最低支持内核版本
+
+  file 就可以看了
+
+
+
+
