@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdint.h>
-
+#include <sys/prctl.h>
 
 int check1(void* addr){
     char flag = 1;
@@ -37,6 +37,7 @@ int check2(void* addr){
 
 int main(){
   void* addr = mmap(NULL, 4096, PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, addr, 4096, "libc_malloc");
   printf("to view my pss: adb shell cat /proc/%d/smaps | grep -A16 %lx\n", getpid(), addr);
   // snoopy.c: https://gist.github.com/FergusInLondon/fec6aebabc3c9e61e284983618f40730#file-snoopy-c
   printf("try snoopy me: adb shell /data/local/tmp/snoopy %d %p 4096\n", getpid(), addr);

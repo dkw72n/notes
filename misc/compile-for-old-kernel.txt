@@ -7,7 +7,126 @@
   编译过程该了几处编译错误
 
 ```patch
-#todo: patch here
+diff --git a/misc/regexp.c b/misc/regexp.c
+index 3b36682..a9b1f6e 100644
+--- a/misc/regexp.c
++++ b/misc/regexp.c
+@@ -30,13 +30,13 @@
+ #if SHLIB_COMPAT (libc, GLIBC_2_0, GLIBC_2_23)
+
+ /* Define the variables used for the interface.  */
+-char *loc1;
+-char *loc2;
++char *loc1 __attribute__ ((nocommon));
++char *loc2 __attribute__ ((nocommon));
+ compat_symbol (libc, loc1, loc1, GLIBC_2_0);
+ compat_symbol (libc, loc2, loc2, GLIBC_2_0);
+
+ /* Although we do not support the use we define this variable as well.  */
+-char *locs;
++char *locs __attribute__ ((nocommon));
+ compat_symbol (libc, locs, locs, GLIBC_2_0);
+
+
+diff --git a/nis/nis_call.c b/nis/nis_call.c
+index 3fa37e4..be3cd36 100644
+--- a/nis/nis_call.c
++++ b/nis/nis_call.c
+@@ -679,8 +679,8 @@ nis_server_cache_add (const_nis_name name, int search_parent,
+
+   /* Choose which entry should be evicted from the cache.  */
+   loc = &nis_server_cache[0];
+-  if (*loc != NULL)
+-    for (i = 1; i < 16; ++i)
++  if (*loc != NULL){
++    for (i = 1; i < 16; ++i){
+       if (nis_server_cache[i] == NULL)
+        {
+          loc = &nis_server_cache[i];
+@@ -690,6 +690,8 @@ nis_server_cache_add (const_nis_name name, int search_parent,
+               || ((*loc)->uses == nis_server_cache[i]->uses
+                   && (*loc)->expires > nis_server_cache[i]->expires))
+        loc = &nis_server_cache[i];
++    }
++  }
+   old = *loc;
+   *loc = new;
+
+diff --git a/nis/nss_nisplus/nisplus-alias.c b/nis/nss_nisplus/nisplus-alias.c
+index 7f698b4..cb5acce 100644
+--- a/nis/nss_nisplus/nisplus-alias.c
++++ b/nis/nss_nisplus/nisplus-alias.c
+@@ -291,7 +291,7 @@ _nss_nisplus_getaliasbyname_r (const char *name, struct aliasent *alias,
+        return status;
+     }
+
+-  if (name != NULL)
++  if (name == NULL)
+     {
+       *errnop = EINVAL;
+       return NSS_STATUS_UNAVAIL;
+diff --git a/stdlib/setenv.c b/stdlib/setenv.c
+index da61ee0..62f1780 100644
+--- a/stdlib/setenv.c
++++ b/stdlib/setenv.c
+@@ -276,8 +276,8 @@ unsetenv (const char *name)
+   LOCK;
+
+   ep = __environ;
+-  if (ep != NULL)
+-    while (*ep != NULL)
++  if (ep != NULL){
++    while (*ep != NULL){
+       if (!strncmp (*ep, name, len) && (*ep)[len] == '=')
+        {
+          /* Found it.  Remove this pointer by moving later ones back.  */
+@@ -290,7 +290,8 @@ unsetenv (const char *name)
+        }
+       else
+        ++ep;
+-
++    }
++  }
+   UNLOCK;
+
+   return 0;
+diff --git a/sunrpc/rpc_parse.c b/sunrpc/rpc_parse.c
+index 1a1df6d..4620f5f 100644
+--- a/sunrpc/rpc_parse.c
++++ b/sunrpc/rpc_parse.c
+@@ -521,7 +521,7 @@ static void
+ get_prog_declaration (declaration * dec, defkind dkind, int num /* arg number */ )
+ {
+   token tok;
+-  char name[10];               /* argument name */
++  char name[30];               /* argument name */
+
+   if (dkind == DEF_PROGRAM)
+     {
+diff --git a/sysdeps/ieee754/dbl-64/e_pow.c b/sysdeps/ieee754/dbl-64/e_pow.c
+index 663fa39..529a0c8 100644
+--- a/sysdeps/ieee754/dbl-64/e_pow.c
++++ b/sysdeps/ieee754/dbl-64/e_pow.c
+@@ -466,15 +466,15 @@ checkint (double x)
+     return (n & 1) ? -1 : 1;   /* odd or even */
+   if (k > 20)
+     {
+-      if (n << (k - 20))
++      if ((n << (k - 20)) != 0)
+        return 0;               /* if not integer */
+-      return (n << (k - 21)) ? -1 : 1;
++      return ((n << (k - 21)) != 0) ? -1 : 1;
+     }
+   if (n)
+     return 0;                  /*if  not integer */
+   if (k == 20)
+     return (m & 1) ? -1 : 1;
+-  if (m << (k + 12))
++  if ((m << (k + 12)) != 0)
+     return 0;
+-  return (m << (k + 11)) ? -1 : 1;
++  return ((m << (k + 11)) != 0) ? -1 : 1;
+ }
 ```
 
 2. 设置 LIBRARY_PATH 环境变量
