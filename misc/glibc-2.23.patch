@@ -1,0 +1,149 @@
+diff -ruN glibc-2.23/misc/regexp.c /mnt/raid0/aosp/glibc-2.23/misc/regexp.c
+--- glibc-2.23/misc/regexp.c	2016-02-19 01:54:00.000000000 +0800
++++ /mnt/raid0/aosp/glibc-2.23/misc/regexp.c	2020-10-22 22:06:56.160055333 +0800
+@@ -30,13 +30,13 @@
+ #if SHLIB_COMPAT (libc, GLIBC_2_0, GLIBC_2_23)
+ 
+ /* Define the variables used for the interface.  */
+-char *loc1;
+-char *loc2;
++char *loc1 __attribute__ ((nocommon));
++char *loc2 __attribute__ ((nocommon));
+ compat_symbol (libc, loc1, loc1, GLIBC_2_0);
+ compat_symbol (libc, loc2, loc2, GLIBC_2_0);
+ 
+ /* Although we do not support the use we define this variable as well.  */
+-char *locs;
++char *locs __attribute__ ((nocommon));
+ compat_symbol (libc, locs, locs, GLIBC_2_0);
+ 
+ 
+diff -ruN glibc-2.23/nis/nis_call.c /mnt/raid0/aosp/glibc-2.23/nis/nis_call.c
+--- glibc-2.23/nis/nis_call.c	2016-02-19 01:54:00.000000000 +0800
++++ /mnt/raid0/aosp/glibc-2.23/nis/nis_call.c	2020-10-22 22:13:26.434924678 +0800
+@@ -679,8 +679,8 @@
+ 
+   /* Choose which entry should be evicted from the cache.  */
+   loc = &nis_server_cache[0];
+-  if (*loc != NULL)
+-    for (i = 1; i < 16; ++i)
++  if (*loc != NULL){
++    for (i = 1; i < 16; ++i){
+       if (nis_server_cache[i] == NULL)
+ 	{
+ 	  loc = &nis_server_cache[i];
+@@ -690,6 +690,8 @@
+ 	       || ((*loc)->uses == nis_server_cache[i]->uses
+ 		   && (*loc)->expires > nis_server_cache[i]->expires))
+ 	loc = &nis_server_cache[i];
++    }
++  }
+   old = *loc;
+   *loc = new;
+ 
+diff -ruN glibc-2.23/nis/nss_nisplus/nisplus-alias.c /mnt/raid0/aosp/glibc-2.23/nis/nss_nisplus/nisplus-alias.c
+--- glibc-2.23/nis/nss_nisplus/nisplus-alias.c	2016-02-19 01:54:00.000000000 +0800
++++ /mnt/raid0/aosp/glibc-2.23/nis/nss_nisplus/nisplus-alias.c	2020-10-22 22:16:06.443380607 +0800
+@@ -291,7 +291,7 @@
+ 	return status;
+     }
+ 
+-  if (name != NULL)
++  if (name == NULL)
+     {
+       *errnop = EINVAL;
+       return NSS_STATUS_UNAVAIL;
+二进制文件 glibc-2.23/po/be.mo 和 /mnt/raid0/aosp/glibc-2.23/po/be.mo 不同
+二进制文件 glibc-2.23/po/bg.mo 和 /mnt/raid0/aosp/glibc-2.23/po/bg.mo 不同
+二进制文件 glibc-2.23/po/ca.mo 和 /mnt/raid0/aosp/glibc-2.23/po/ca.mo 不同
+二进制文件 glibc-2.23/po/cs.mo 和 /mnt/raid0/aosp/glibc-2.23/po/cs.mo 不同
+二进制文件 glibc-2.23/po/da.mo 和 /mnt/raid0/aosp/glibc-2.23/po/da.mo 不同
+二进制文件 glibc-2.23/po/de.mo 和 /mnt/raid0/aosp/glibc-2.23/po/de.mo 不同
+二进制文件 glibc-2.23/po/el.mo 和 /mnt/raid0/aosp/glibc-2.23/po/el.mo 不同
+二进制文件 glibc-2.23/po/en_GB.mo 和 /mnt/raid0/aosp/glibc-2.23/po/en_GB.mo 不同
+二进制文件 glibc-2.23/po/eo.mo 和 /mnt/raid0/aosp/glibc-2.23/po/eo.mo 不同
+二进制文件 glibc-2.23/po/es.mo 和 /mnt/raid0/aosp/glibc-2.23/po/es.mo 不同
+二进制文件 glibc-2.23/po/fi.mo 和 /mnt/raid0/aosp/glibc-2.23/po/fi.mo 不同
+二进制文件 glibc-2.23/po/fr.mo 和 /mnt/raid0/aosp/glibc-2.23/po/fr.mo 不同
+二进制文件 glibc-2.23/po/gl.mo 和 /mnt/raid0/aosp/glibc-2.23/po/gl.mo 不同
+二进制文件 glibc-2.23/po/hr.mo 和 /mnt/raid0/aosp/glibc-2.23/po/hr.mo 不同
+二进制文件 glibc-2.23/po/hu.mo 和 /mnt/raid0/aosp/glibc-2.23/po/hu.mo 不同
+二进制文件 glibc-2.23/po/ia.mo 和 /mnt/raid0/aosp/glibc-2.23/po/ia.mo 不同
+二进制文件 glibc-2.23/po/id.mo 和 /mnt/raid0/aosp/glibc-2.23/po/id.mo 不同
+二进制文件 glibc-2.23/po/it.mo 和 /mnt/raid0/aosp/glibc-2.23/po/it.mo 不同
+二进制文件 glibc-2.23/po/ja.mo 和 /mnt/raid0/aosp/glibc-2.23/po/ja.mo 不同
+二进制文件 glibc-2.23/po/ko.mo 和 /mnt/raid0/aosp/glibc-2.23/po/ko.mo 不同
+二进制文件 glibc-2.23/po/lt.mo 和 /mnt/raid0/aosp/glibc-2.23/po/lt.mo 不同
+二进制文件 glibc-2.23/po/nb.mo 和 /mnt/raid0/aosp/glibc-2.23/po/nb.mo 不同
+二进制文件 glibc-2.23/po/nl.mo 和 /mnt/raid0/aosp/glibc-2.23/po/nl.mo 不同
+二进制文件 glibc-2.23/po/pl.mo 和 /mnt/raid0/aosp/glibc-2.23/po/pl.mo 不同
+二进制文件 glibc-2.23/po/pt_BR.mo 和 /mnt/raid0/aosp/glibc-2.23/po/pt_BR.mo 不同
+二进制文件 glibc-2.23/po/ru.mo 和 /mnt/raid0/aosp/glibc-2.23/po/ru.mo 不同
+二进制文件 glibc-2.23/po/rw.mo 和 /mnt/raid0/aosp/glibc-2.23/po/rw.mo 不同
+二进制文件 glibc-2.23/po/sk.mo 和 /mnt/raid0/aosp/glibc-2.23/po/sk.mo 不同
+二进制文件 glibc-2.23/po/sl.mo 和 /mnt/raid0/aosp/glibc-2.23/po/sl.mo 不同
+二进制文件 glibc-2.23/po/sv.mo 和 /mnt/raid0/aosp/glibc-2.23/po/sv.mo 不同
+二进制文件 glibc-2.23/po/tr.mo 和 /mnt/raid0/aosp/glibc-2.23/po/tr.mo 不同
+二进制文件 glibc-2.23/po/uk.mo 和 /mnt/raid0/aosp/glibc-2.23/po/uk.mo 不同
+二进制文件 glibc-2.23/po/vi.mo 和 /mnt/raid0/aosp/glibc-2.23/po/vi.mo 不同
+二进制文件 glibc-2.23/po/zh_CN.mo 和 /mnt/raid0/aosp/glibc-2.23/po/zh_CN.mo 不同
+二进制文件 glibc-2.23/po/zh_TW.mo 和 /mnt/raid0/aosp/glibc-2.23/po/zh_TW.mo 不同
+diff -ruN glibc-2.23/stdlib/setenv.c /mnt/raid0/aosp/glibc-2.23/stdlib/setenv.c
+--- glibc-2.23/stdlib/setenv.c	2016-02-19 01:54:00.000000000 +0800
++++ /mnt/raid0/aosp/glibc-2.23/stdlib/setenv.c	2020-10-22 22:03:07.453684715 +0800
+@@ -276,8 +276,8 @@
+   LOCK;
+ 
+   ep = __environ;
+-  if (ep != NULL)
+-    while (*ep != NULL)
++  if (ep != NULL){
++    while (*ep != NULL){
+       if (!strncmp (*ep, name, len) && (*ep)[len] == '=')
+ 	{
+ 	  /* Found it.  Remove this pointer by moving later ones back.  */
+@@ -290,7 +290,8 @@
+ 	}
+       else
+ 	++ep;
+-
++    }
++  }
+   UNLOCK;
+ 
+   return 0;
+diff -ruN glibc-2.23/sunrpc/rpc_parse.c /mnt/raid0/aosp/glibc-2.23/sunrpc/rpc_parse.c
+--- glibc-2.23/sunrpc/rpc_parse.c	2016-02-19 01:54:00.000000000 +0800
++++ /mnt/raid0/aosp/glibc-2.23/sunrpc/rpc_parse.c	2020-10-22 22:12:29.601341934 +0800
+@@ -521,7 +521,7 @@
+ get_prog_declaration (declaration * dec, defkind dkind, int num /* arg number */ )
+ {
+   token tok;
+-  char name[10];		/* argument name */
++  char name[30];		/* argument name */
+ 
+   if (dkind == DEF_PROGRAM)
+     {
+diff -ruN glibc-2.23/sysdeps/ieee754/dbl-64/e_pow.c /mnt/raid0/aosp/glibc-2.23/sysdeps/ieee754/dbl-64/e_pow.c
+--- glibc-2.23/sysdeps/ieee754/dbl-64/e_pow.c	2016-02-19 01:54:00.000000000 +0800
++++ /mnt/raid0/aosp/glibc-2.23/sysdeps/ieee754/dbl-64/e_pow.c	2020-10-22 22:10:59.202824379 +0800
+@@ -466,15 +466,15 @@
+     return (n & 1) ? -1 : 1;	/* odd or even */
+   if (k > 20)
+     {
+-      if (n << (k - 20))
++      if ((n << (k - 20)) != 0)
+ 	return 0;		/* if not integer */
+-      return (n << (k - 21)) ? -1 : 1;
++      return ((n << (k - 21)) != 0) ? -1 : 1;
+     }
+   if (n)
+     return 0;			/*if  not integer */
+   if (k == 20)
+     return (m & 1) ? -1 : 1;
+-  if (m << (k + 12))
++  if ((m << (k + 12)) != 0)
+     return 0;
+-  return (m << (k + 11)) ? -1 : 1;
++  return ((m << (k + 11)) != 0) ? -1 : 1;
+ }

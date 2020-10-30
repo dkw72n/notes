@@ -146,3 +146,7 @@ index 663fa39..529a0c8 100644
 
 
 
+
+ref: 
+[1] https://stackoverflow.com/questions/11206243/how-to-build-a-static-binary-for-gnu-linux-installations-with-old-kernel
+
