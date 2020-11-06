@@ -53,6 +53,21 @@ diff -ruN glibc-2.23/nis/nss_nisplus/nisplus-alias.c /mnt/raid0/aosp/glibc-2.23/
      {
        *errnop = EINVAL;
        return NSS_STATUS_UNAVAIL;
+diff -ruN glibc-2.23/nss/nsswitch.c /mnt/raid0/aosp/glibc-2.23/nss/nsswitch.c
+--- glibc-2.23/nss/nsswitch.c	2016-02-19 01:54:00.000000000 +0800
++++ /mnt/raid0/aosp/glibc-2.23/nss/nsswitch.c	2020-11-06 12:47:14.355782985 +0800
+@@ -96,9 +96,9 @@
+ 
+ #ifdef USE_NSCD
+ /* Nonzero if this is the nscd process.  */
+-static bool is_nscd;
++static bool __attribute__((unused)) is_nscd;
+ /* The callback passed to the init functions when nscd is used.  */
+-static void (*nscd_init_cb) (size_t, struct traced_file *);
++static void __attribute__((unused)) (*nscd_init_cb) (size_t, struct traced_file *);
+ #endif
+ 
+ 
 二进制文件 glibc-2.23/po/be.mo 和 /mnt/raid0/aosp/glibc-2.23/po/be.mo 不同
 二进制文件 glibc-2.23/po/bg.mo 和 /mnt/raid0/aosp/glibc-2.23/po/bg.mo 不同
 二进制文件 glibc-2.23/po/ca.mo 和 /mnt/raid0/aosp/glibc-2.23/po/ca.mo 不同

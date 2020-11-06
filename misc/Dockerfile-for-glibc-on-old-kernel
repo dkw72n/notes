@@ -19,7 +19,7 @@ RUN mkdir build
 
 WORKDIR /root/build
 
-RUN ../glibc-2.23/configure --enable-kernel=2.6.32 --prefix=/root/build/out
+RUN ../glibc-2.23/configure --enable-kernel=2.6.32 --enable-static-nss --prefix=/root/build/out
 
 RUN make -j4 && make install
 
