@@ -1,0 +1,7 @@
+https://serverfault.com/questions/238695/how-can-i-set-the-metric-of-a-manually-added-route-on-windows
+
+route add 的 metric 参数默认是不生效的, 导致加全局路由时, 没法排在最前面.
+这是因为网卡的 auto metric 参数打开了.
+
+更改适配器选项 -> TAP -> IPv4协议 -> 属性 -> 高级 -> 自动跃点
+
