@@ -1,0 +1,8 @@
+set -e
+set -x
+mkdir tmp || true
+cython -3 -o tmp/pykp.c src/pykp.pyx
+clang -Isrc/platform/linux -Isrc tmp/pykp.c src/kperfdata.S -shared -fPIC -o pykp.cpython-36m-x86_64-linux-gnu.so -I/usr/include/python3.6m -L/usr/lib/x86_64-linux-gnu/ -lpython3.6m
+#py.exe -3 test.py
+python3.6 -c "import pykp"
+
