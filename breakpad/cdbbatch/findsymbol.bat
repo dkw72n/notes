@@ -1,0 +1,1 @@
+cdb -pv %1 %2 -logo out.txt -c "!sym prompts;.reload;ln %3;q"

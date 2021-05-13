@@ -1,0 +1,454 @@
+﻿<html>
+
+<head>
+<title>DebugInfo.com - Batch files for CDB debugger</title>
+</head>
+
+<!-- Body -->
+<body>
+
+
+<h3>
+Batch files for CDB debugger
+</h3>
+
+<h4>
+Introduction
+</h4>
+
+<p>
+Here is the list of batch files that accompany <a href="http://www.debuginfo.com/articles/easywindbg.html">WinDbg the Easy Way</a> article. 
+This article introduces CDB debugger as an effective complement to Visual Studio debugger for various advanced 
+debugging tasks. The only major obstacle on the way to using CDB effectively is the length of the command 
+lines – too much typing has to be done. The batch files presented here solve this problem by hiding the complexities 
+of CDB command line parameters behind a simple and easy-to-use interface. <a href="http://www.debuginfo.com/articles/easywindbg2.html#batchfiles">Here</a> 
+you can find more information about the approach used to wrap CDB commands with batch files.
+</p>
+
+<h4>
+How to use
+</h4>
+
+<p>
+The batch files cannot run successfully if cdb.exe cannot be found on the executable search path. Since CDB 
+is distributed as part of <a href="http://www.microsoft.com/whdc/ddk/debugging/default.mspx">Debugging Tools for Windows</a> 
+package, it is possible, for example, to add the location of cdb.exe to the executable search path using 
+the following command:
+</p>
+
+<p>
+<pre>
+  PATH c:\dbgtools;%PATH%
+</pre>
+</p>
+
+<p>
+(here c:\dbgtools represents the installation directory of Debugging Tools for Windows)
+</p>
+
+<p>
+Additional information about setting up and configuring Debugging Tools for Windows can be found 
+<a href="http://www.debuginfo.com/articles/easywindbg.html#setupandconfig">here</a>.
+</p>
+
+<p>
+The batch files support the following command line interface:
+</p>
+
+<p>
+<pre>
+  batchfile.bat TargetSpec [OtherOptions] 
+</pre>
+</p>
+
+<p>
+TargetSpec lets the user specify the target of the command. It can be an already running process, or a crash dump file. 
+If an already running process is specified, the command is always executed in <a href="http://www.debuginfo.com/articles/easywindbg.html#noninvasivedebug">noninvasive mode</a>.
+</p>
+
+<p>
+The following values of TargetSpec can be used: 
+</p>
+
+<table border=1>
+
+<tr>
+<th>TargetSpec</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+
+<tr>
+<td><nobr>-p Pid</nobr></td>
+<td>
+Asks CDB to attach to the process with the specified process id. The process id can be obtained from Task Manager 
+or other similar tool.
+</td>
+<td><nobr>batch.bat -p 1034</nobr></td>
+</tr>
+
+<tr>
+<td><nobr>-pn ExeName</nobr></td>
+<td>
+Asks CDB to attach to the process with the specified name of its main executable (.exe). This option is usually more 
+convenient than "-p Pid", because we usually know the name of our application's main executable, and do not have 
+to look for it in Task Manager. But this option cannot be used if more than one process with the given executable 
+name is currently running (CDB will report an error).
+</td>
+<td><nobr>batch.bat -pn myapp.exe</nobr></td>
+</tr>
+
+<tr>
+<td><nobr>-psn ServiceName</nobr></td>
+<td>
+Asks CDB to attach to the process that contains the specified service. For example, if you want to attach to, say, 
+Windows Management Instrumentation service, you should use WinMgmt as the service name.
+</td>
+<td><nobr>batch.bat -psn MyService</nobr></td>
+</tr>
+
+<tr>
+<td><nobr>-z DumpFile</nobr></td>
+<td>
+Asks CDB to open the specified crash dump file.
+</td>
+<td><nobr>batch.bat -z c:\myapp.dmp</nobr></td>
+</tr>
+
+</table>
+
+<p>
+In the examples on this page, I will use only “-pn myapp.exe” TargetSpec. But unless explicitly stated otherwise, 
+other values of TargetSpec can also be used.
+</p>
+
+<p>
+All batch files print their output to the console and also save it in out.txt file in the current directory.
+</p>
+
+<h4>
+Batch files
+</h4>
+
+<table border=1>
+
+<tr>
+<th>Name</th>
+<th>Usage / Description / Example</th>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>Callstacks.bat</nobr></td>
+<td><nobr>callstacks targetspec</nobr></td>
+</tr>
+<tr>
+<td>
+Prints call stacks of all threads in the target process.
+</td>
+</tr>
+<tr>
+<td><nobr>callstacks -pn myapp.exe</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>Callstack_Thread.bat</nobr></td>
+<td><nobr>callstack_thread targetspec threadid</nobr></td>
+</tr>
+<tr>
+<td>
+Prints the call stack of the thread with the specified thread id.
+</td>
+</tr>
+<tr>
+<td><nobr>callstack_thread -pn myapp.exe 0x128</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>Locks.bat</nobr></td>
+<td><nobr>locks targetspec</nobr></td>
+</tr>
+<tr>
+<td>
+Prints detailed information about all critical sections currently held by the threads of the process, including 
+information about owner threads.
+</td>
+</tr>
+<tr>
+<td><nobr>locks -pn myapp.exe</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>Runaway.bat</nobr></td>
+<td><nobr>runaway targetspec</nobr></td>
+</tr>
+<tr>
+<td>
+Prints the times spent by each of the process' threads executing user mode code.
+</td>
+</tr>
+<tr>
+<td><nobr>runaway -pn myapp.exe</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>StackUsage.bat</nobr></td>
+<td><nobr>stackusage targetspec</nobr></td>
+</tr>
+<tr>
+<td>
+Prints call stacks of all threads in the target process. For every function on every call stack, the number 
+of bytes occupied by the function on the thread's stack is reported (in the first column).
+</td>
+</tr>
+<tr>
+<td><nobr>stackusage -pn myapp.exe</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>StackUsage_Thread.bat</nobr></td>
+<td><nobr>stackusage_thread targetspec threadid</nobr></td>
+</tr>
+<tr>
+<td>
+Prints the call stack of the thread with the specified thread id. For every function on the call stack, 
+the number of bytes occupied by the function on the thread's stack is reported (in the first column).
+</td>
+</tr>
+<tr>
+<td><nobr>stackusage_thread -pn myapp.exe 0x258</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>MkDump.bat</nobr></td>
+<td><nobr>mkdump targetspec dumptype filename</nobr></td>
+</tr>
+<tr>
+<td>
+<p>
+Creates a minidump of the target process.
+</p>
+<p>
+Parameters:
+</p>
+<p>
+<ul>
+<li>dumptype: Specifies the type of the minidump (e.g. /m, /ma, /mFhutwd, or any other dump type allowed by .dump 
+command; <a href="http://www.debuginfo.com/articles/easywindbg2.html#savedumps">here</a> you can find more information)
+<li>filename: Name of the minidump file
+</ul>
+</p>
+</td>
+</tr>
+<tr>
+<td><nobr>mkdump -pn myapp.exe /ma c:\myapp.dmp</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>MkDumpU.bat</nobr></td>
+<td><nobr>mkdumpu targetspec dumptype filename</nobr></td>
+</tr>
+<tr>
+<td>
+<p>
+Creates a minidump of the target process. The name of the created dump file contains a suffix that reflects 
+the time when the dump was created.
+</p>
+<p>
+Parameters:
+</p>
+<p>
+<ul>
+<li>dumptype: Specifies the type of the minidump (e.g. /m, /ma, /mFhutwd, or any other dump type allowed by .dump 
+command; <a href="http://www.debuginfo.com/articles/easywindbg2.html#savedumps">here</a> you can find more information)
+<li>filename: Name of the minidump file
+</ul>
+</p>
+</p>
+</td>
+</tr>
+<tr>
+<td><nobr>mkdumpu -pn myapp.exe /ma c:\myapp.dmp</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>DumpAnalyze.bat</nobr></td>
+<td><nobr>dumpanalyze targetspec</nobr></td>
+</tr>
+<tr>
+<td>
+Analyzes the specified crash dump and displays information about the current exception, including call stack 
+and the values of function parameters and local variables at the moment of the exception. 
+<a href="http://www.debuginfo.com/articles/easywindbg2.html#crashdumpanalysis">Here</a> you can find more information about crash dump analysis.
+</td>
+</tr>
+<tr>
+<td><nobr>dumpanalyze -z c:\myapp.dmp</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>DumpStackCtx.bat</nobr></td>
+<td><nobr>dumpstackctx targetspec excptrsaddr</nobr></td>
+</tr>
+<tr>
+<td>
+<p>
+Analyzes the specified crash dump and displays information about the exception specified by the address of 
+its EXCEPTION_POINTERS structure, including call stack and the values of function parameters and local variables 
+at the moment of the exception. Excptrsaddr parameter is used to specify the address of EXCEPTION_POINTERS 
+structure passed as the first parameter to kernel32!UnhandledExceptionFilter function.
+</p>
+<p>
+<a href="http://www.debuginfo.com/articles/easywindbg2.html#crashdumpanalysis">Here</a> you can find more information about crash dump 
+analysis (search for DumpStackCtx to find additional information about using this batch file). 
+</p>
+</td>
+</tr>
+<tr>
+<td><nobr>dumpstackctx -z c:\myapp.dmp 0x00124484</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>Vadump.bat</nobr></td>
+<td><nobr>vadump targetspec</nobr></td>
+</tr>
+<tr>
+<td>
+Displays the virtual memory map of the target process.
+</td>
+</tr>
+<tr>
+<td><nobr>vadump -pn myapp.exe</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>Address_All.bat</nobr></td>
+<td><nobr>address_all targetspec</nobr></td>
+</tr>
+<tr>
+<td>
+Displays the virtual memory map of the target process. This batch file provides more detailed information than 
+Vadump.bat, but works only on Windows XP and newer operating systems.
+</td>
+</tr>
+<tr>
+<td><nobr>address_all -pn myapp.exe</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>Address.bat</nobr></td>
+<td><nobr>address targetspec addr</nobr></td>
+</tr>
+<tr>
+<td>
+Displays the kind of virtual memory the specified address belongs to (for example, is it located in a heap, 
+stack or an executable image). Addr parameter is used to specify the address. Works only on Windows XP and 
+newer operating systems.
+</td>
+</tr>
+<tr>
+<td><nobr>address -pn myapp.exe 0x00141810</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>Address_Summary.bat</nobr></td>
+<td><nobr>address_summary targetspec</nobr></td>
+</tr>
+<tr>
+<td>
+Displays the summary information about virtual memory usage of the target process. This batch file is especially 
+useful when we are debugging a memory leak and want to determine what kind of memory is leaked (heap, stack, 
+raw virtual memory, and so on). Works only on Windows XP and newer operating systems.
+</td>
+</tr>
+<tr>
+<td><nobr>address_summary -pn myapp.exe</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>ListSymbols.bat</nobr></td>
+<td><nobr>listsymbols targetspec module!symbol</nobr></td>
+</tr>
+<tr>
+<td>
+Prints the list of symbols with the specified name (wildcards can be used). The output is sorted by address. 
+<a href="http://www.debuginfo.com/articles/easywindbg2.html#searchsymbols">Here</a> you can find more information about using this batch 
+file and related commands.
+</td>
+</tr>
+<tr>
+<td>
+<p>
+The following command displays the list of all member functions and static data members of CMainFrame class defined 
+in myapp.exe module:
+</p>
+<p>
+<nobr>listsymbols -pn myapp.exe myapp!*CMainFrame*</nobr>
+</p>
+</td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>FindSymbol.bat</nobr></td>
+<td><nobr>findsymbol targetspec address</nobr></td>
+</tr>
+<tr>
+<td>
+Print the name and the start address of the symbol that occupies the specified address in memory. 
+Information about the next symbol after the specified address is also reported.
+</td>
+</tr>
+<tr>
+<td><nobr>findsymbol -pn myapp.exe 0x00402588</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>DumpType.bat</nobr></td>
+<td><nobr>dumptype targetspec typename</nobr></td>
+</tr>
+<tr>
+<td>
+Displays detailed layout of the specified data type, including offsets of class/structure members. The type name 
+(typename) can be prefixed with the module name for further clarity (e.g. “myapp!CMyClass”).
+</td>
+</tr>
+<tr>
+<td><nobr>dumptype -pn myapp.exe CMyClass</nobr></td>
+</tr>
+
+<tr>
+<td rowspan=3><nobr>DumpObj.bat</nobr></td>
+<td><nobr>dumpobj targetspec typename address</nobr></td>
+</tr>
+<tr>
+<td>
+Displays detailed layout of the specified object with the specified type. The object address is specified via 
+Address parameter. The type name (typename) can be prefixed with the module name for further clarity 
+(e.g. “myapp!CMyClass”).
+</td>
+</tr>
+<tr>
+<td><nobr>dumpobj -pn myapp.exe CMyClass 0x00123844</nobr></td>
+</tr>
+
+</table>
+
+<hr size=1 width="100%">
+
+<p>
+Have comments, suggestions, or corrections? Feel free to 
+<a href="http://www.debuginfo.com/contact.html">contact</a> us. 
+</p>
+
+<p>
+Need help with debugging? Consider our <a href="http://www.debuginfo.com/services.html">debugging services</a>.
+</p>
+
+<p>
+&copy;&nbsp;Oleg Starodumov, 2004 - 2006
+</p>
+
+<hr size=1 width="100%">
+
+</body>
+
+</html>
