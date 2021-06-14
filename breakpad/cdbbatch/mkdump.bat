@@ -1,0 +1,1 @@
+cdb -pv %1 %2 -logo out.txt -c ".dump %3 %4;q"
