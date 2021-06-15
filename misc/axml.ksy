@@ -28,7 +28,7 @@ types:
       doc: length of manifest file
     
     - id: x
-      size: size - 8
+      size: size - 8 # header_size
       type: 
         switch-on: type
         cases:
@@ -36,17 +36,21 @@ types:
           res_type::res_xml_start_namespace_type: res_xml_tree_start_namespace_remain
           res_type::res_xml_start_element_type: res_xml_tree_start_element_remain
           res_type::res_xml_end_element_type: res_xml_tree_end_element_remain
+          res_type::res_xml_end_namespace_type: res_xml_tree_end_namespace_remain
           res_type::res_xml_cdata_type: res_xml_tree_cdata_remain
-          res_type::res_string_pool_type: res_string_pool_remain
+          res_type::res_string_pool_type: res_string_pool_remain(_io)
           res_type::res_xml_resource_map_type: res_xml_resource_map_remain
           _: file_remainder
     
   res_string_pool_remain:
+    params:
+      - id: io
+        type: io
     seq:
     - id: extra
       type: res_string_pool_header
     - id: body
-      type: res_string_pool_ext(extra.string_count)
+      type: res_string_pool_ext(io, extra.string_count, extra.strings_start)
       
   res_xml_type_remain:
     seq:
@@ -75,6 +79,13 @@ types:
     - id: body
       type: res_xml_tree_end_element_ext
   
+  res_xml_tree_end_namespace_remain:
+    seq:
+    - id: extra
+      type: res_xml_tree_node
+    - id: body
+      type: res_xml_tree_start_namespace_ext
+      
   res_xml_tree_cdata_remain:
     seq:
     - id: extra
@@ -96,11 +107,15 @@ types:
       
   res_string_pool_ext:
     params:
+      - id: io
+        type: io
       - id: string_count
+        type: u4
+      - id: string_start
         type: u4
     seq:
     - id: entries
-      type: u4
+      type: string_index(io, string_start)
       repeat: expr
       repeat-expr: string_count
     - id: strings
@@ -210,6 +225,21 @@ types:
         type: str
         encoding: UTF-16LE
         size: len*2 + 2
+  
+  string_index:
+    params:
+      - id: io
+        type: io
+      - id: start
+        type: u4
+    seq:
+      - id: idx
+        type: u4
+    instances:
+      a_string:
+        io: io
+        pos: idx + start
+        type: string16
 enums:
   res_type:
     0: res_null_type
@@ -224,5 +254,3 @@ enums:
     260: res_xml_cdata_type
     383: res_xml_last_chunk_type
     384: res_xml_resource_map_type
-    
-    
