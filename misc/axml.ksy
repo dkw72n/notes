@@ -5,14 +5,40 @@ meta:
 doc: |
   https://cs.android.com/android/platform/superproject/+/master:frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h;l=201;drc=master;bpv=1;bpt=1
 seq:
-  - id: hdr
+  - id: magic
+    contents: [0x03, 0x00]
+    doc: 3 denotes to RES_XML_TYPE
+  - id: header_size
+    type: u2
+    doc: header length
+  - id: size
+    type: u4
+    doc: length of manifest file
+  - id: chunks
+    #size: hdr.size - 8
     type: res_chunk
+    repeat: eos
+    
 types:
   file_remainder:
     seq:
     - id: remainder
       size-eos: true
       doc: we don't need this to build plaintext XML
+      
+  res_chunk_header:
+    seq:
+    - id: type
+      type: u2
+      enum: res_type
+      doc: 3 denotes to RES_XML_TYPE
+    - id: header_size
+      type: u2
+      doc: header length
+    - id: size
+      type: u4
+      doc: length of manifest file
+      
   res_chunk:
     doc: https://cs.android.com/android/platform/superproject/+/master:frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h;drc=master;l=201
     seq:
@@ -42,6 +68,11 @@ types:
           res_type::res_xml_resource_map_type: res_xml_resource_map_remain
           _: file_remainder
     
+    instances:
+      tag:
+        value: type == res_type::res_xml_start_element_type ? x.as<res_xml_tree_start_element_remain>.tag : type == res_type::res_xml_end_element_type ? x.as<res_xml_tree_end_element_remain>.tag : ""
+    -webide-representation: "{type} {tag}"
+
   res_string_pool_remain:
     params:
       - id: io
@@ -60,36 +91,78 @@ types:
       
   res_xml_tree_start_namespace_remain:
     seq:
-    - id: extra
-      type: res_xml_tree_node
+    - id: line_number
+      type: u4
+    - id: comment
+      type: u4
     - id: body
       type: res_xml_tree_start_namespace_ext
   
   res_xml_tree_start_element_remain:
     seq:
+    - id: line_number
+      type: u4
+    - id: comment
+      type: u4
+    - id: ns
+      type: u4
+    - id: name_idx
+      type: u4
+    - id: attribute_start
+      type: u2
+    - id: attribute_size
+      type: u2      
+    - id: attribute_count
+      type: u2
+    - id: id_index
+      type: u2
+    - id: class_index
+      type: u2
+    - id: style_index
+      type: u2
     - id: extra
-      type: res_xml_tree_node
-    - id: body
-      type: res_xml_tree_attr_ext
+      type: file_remainder
+      size: 20 - attribute_start
+    - id: attributes
+      type: res_xml_tree_attribute
+      repeat: expr
+      repeat-expr: attribute_count
+    - id: should_be_empty
+      type: file_remainder
+    instances:
+      tag:
+        value: _root.chunks[0].x.as<res_string_pool_remain>.body.strings[name_idx].string
+      
+    -webide-representation: "<{tag}>"
   
   res_xml_tree_end_element_remain:
     seq:
-    - id: extra
-      type: res_xml_tree_node
+    - id: line_number
+      type: u4
+    - id: comment
+      type: u4
     - id: body
       type: res_xml_tree_end_element_ext
-  
+    instances:
+      tag:
+        value: body.name
+    -webide-representation: "</{tag}>"
+    
   res_xml_tree_end_namespace_remain:
     seq:
-    - id: extra
-      type: res_xml_tree_node
+    - id: line_number
+      type: u4
+    - id: comment
+      type: u4
     - id: body
       type: res_xml_tree_start_namespace_ext
       
   res_xml_tree_cdata_remain:
     seq:
-    - id: extra
-      type: res_xml_tree_node
+    - id: line_number
+      type: u4
+    - id: comment
+      type: u4
     - id: body
       type: res_xml_tree_cdata_ext
       
@@ -149,9 +222,12 @@ types:
     seq:
     - id: ns
       type: u4
-    - id: name
+    - id: name_idx
       type: u4
-      
+    instances:
+      name:
+        value: _root.chunks[0].x.as<res_string_pool_remain>.body.strings[name_idx].string
+  
   res_xml_tree_cdata_ext:
     seq:
     - id: data
@@ -163,7 +239,7 @@ types:
     seq:
     - id: ns
       type: u4
-    - id: name
+    - id: name_idx
       type: u4
     - id: attribute_start
       type: u2
@@ -186,18 +262,26 @@ types:
       repeat-expr: attribute_count
     - id: should_be_empty
       type: file_remainder
-      
+    instances:
+      name:
+        value: _root.chunks[0].x.as<res_string_pool_remain>.body.strings[name_idx]
+    
+        
   res_xml_tree_attribute:
     seq:
     - id: ns
       type: u4
-    - id: name
+    - id: name_idx
       type: u4
     - id: raw_value
       type: u4
     - id: typed_value
       type: res_value
+    instances:
+      key:
+        value: _root.chunks[0].x.as<res_string_pool_remain>.body.strings[name_idx].string
       
+    -webide-representation: "{key} = "
   res_value:
     seq:
     - id: size
@@ -207,13 +291,6 @@ types:
     - id: data_type
       type: u1
     - id: data
-      type: u4
-      
-  res_xml_tree_node:
-    seq:
-    - id: line_number
-      type: u4
-    - id: comment
       type: u4
       
   string16:
