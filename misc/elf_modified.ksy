@@ -470,6 +470,8 @@ types:
             type: strz
             encoding: ASCII
             -webide-parse-mode: eager
+        -webide-representation: "{name}"
+        
       dynsym_section_entry64:
         params:
           - id: io
@@ -494,6 +496,7 @@ types:
             type: strz
             encoding: ASCII
             -webide-parse-mode: eager
+        -webide-representation: "{name}"
     instances:
       program_headers:
         pos: program_header_offset
