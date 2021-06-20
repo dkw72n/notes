@@ -100,9 +100,9 @@ types:
   
     instances:
       prefix:
-        value: body.prefix.n.n
+        value: body.prefix.n
       uri:
-        value: body.uri.n.n
+        value: body.uri.n
     -webide-representation: "xlmns:{prefix}={uri}"
     
   res_xml_tree_start_element_remain:
@@ -138,7 +138,7 @@ types:
       type: file_remainder
     instances:
       tag:
-        value: _root.chunks[0].x.as<res_string_pool_remain>.body.strings[name_idx].value
+        value: _root.chunks[0].x.as<res_string_pool_remain>.body.entries[name_idx].n
     -webide-representation: "<{tag}>"
   
   res_xml_tree_end_element_remain:
@@ -183,10 +183,6 @@ types:
       repeat: expr
       repeat-expr: _parent.extra.string_count
     - id: strings
-      type: string_x(_parent.extra.string_bits)
-      repeat: expr
-      repeat-expr: _parent.extra.string_count
-    - id: remain
       type: file_remainder
       
   res_string_pool_header:
@@ -223,7 +219,7 @@ types:
       type: u4
     instances:
       name:
-        value: _root.chunks[0].x.as<res_string_pool_remain>.body.strings[name_idx].value
+        value: _root.chunks[0].x.as<res_string_pool_remain>.body.entries[name_idx].n
   
   res_xml_tree_cdata_ext:
     seq:
@@ -261,7 +257,7 @@ types:
       type: file_remainder
     instances:
       name:
-        value: _root.chunks[0].x.as<res_string_pool_remain>.body.strings[name_idx]
+        value: _root.chunks[0].x.as<res_string_pool_remain>.body.entries[name_idx].n
     
         
   res_xml_tree_attribute:
@@ -276,8 +272,8 @@ types:
       type: res_value
     instances:
       key:
-        value: _root.chunks[0].x.as<res_string_pool_remain>.body.strings[name_idx].value
-    #-webide-representation: "{key} = "
+        value: _root.chunks[0].x.as<res_string_pool_remain>.body.entries[name_idx].n
+    -webide-representation: "{key} = "
     
   res_value:
     seq:
@@ -385,7 +381,7 @@ types:
   
     instances:
       n:
-        value: _root.chunks[0].x.as<res_string_pool_remain>.body.entries[idx]
+        value: _root.chunks[0].x.as<res_string_pool_remain>.body.entries[idx].n
         
     -webide-representation: "\"{n}\""
     
