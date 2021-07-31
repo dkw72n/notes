@@ -542,13 +542,8 @@ bool ElfReader::LoadSegments(bool is_hidden) {
                               -1,
                               0);
         if (seg_addr != MAP_FAILED){
-          off_t cur = lseek(fd_, 0, SEEK_CUR);
-          off_t pos = lseek(fd_, file_offset_ + file_page_start, SEEK_SET);
-          TRACE("[before read] lseek to %p->%p", cur, pos);
-          ssize_t n = read(fd_, seg_addr, file_length);
+          ssize_t n = pread(fd_, seg_addr, file_length, file_offset_ + file_page_start);
           TRACE("read %p bytes , %s", n, strerror(errno));
-          cur = lseek(fd_, cur, SEEK_SET);
-          TRACE("[after read] lseek to %p -> %p", pos, cur);
           mprotect(reinterpret_cast<void*>(seg_page_start), file_length, PFLAGS_TO_PROT(phdr->p_flags));
         }
       }

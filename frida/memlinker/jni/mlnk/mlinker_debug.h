@@ -57,7 +57,7 @@
 #include <android/log.h>
 #include <unistd.h>
 
-#define MLNK_QUITE 1
+#define MLNK_NOISY 0
 __LIBC_HIDDEN__ extern int g_ld_debug_verbosity;
 
 #define CHECK(predicate) { \
@@ -68,7 +68,7 @@ __LIBC_HIDDEN__ extern int g_ld_debug_verbosity;
     } \
   }
 
-#if MLNK_QUITE
+#if MLNK_NOISY
 #if LINKER_DEBUG_TO_LOG
 #define _PRINTVF(v, x...) \
     do { \
@@ -86,7 +86,7 @@ __LIBC_HIDDEN__ extern int g_ld_debug_verbosity;
 
 #define _PRINTVF(v, x...)
 
-#endif /* !MLNK_QUITE */
+#endif /* !MLNK_NOISY */
 
 #define PRINT(x...)          _PRINTVF(-1, x)
 #define INFO(x...)           _PRINTVF(0, x)

@@ -2121,7 +2121,7 @@ bool soinfo::relocate(const VersionTracker& version_tracker, ElfRelIteratorT&& r
       
       if (s == nullptr){
         TRACE("fall back to dlsym: %s", sym_name);
-        dlsym_ret = (ElfW(Sym)*)dlsym(NULL, sym_name);
+        dlsym_ret = (ElfW(Sym)*)dlsym(RTLD_DEFAULT, sym_name);
       }
 
       TRACE("%s => %p", sym_name, dlsym_ret);
