@@ -384,7 +384,6 @@ types:
                 'sh_type::strtab': strings_struct
                 'sh_type::dynsym': dynsym_section
                 'sh_type::symtab': dynsym_section
-                'sh_type::dynstr': strings_struct
           name:
             io: _root.header.strings._io
             pos: ofs_name
@@ -471,6 +470,8 @@ types:
             type: strz
             encoding: ASCII
             -webide-parse-mode: eager
+        -webide-representation: "{name}"
+        
       dynsym_section_entry64:
         params:
           - id: io
@@ -495,6 +496,7 @@ types:
             type: strz
             encoding: ASCII
             -webide-parse-mode: eager
+        -webide-representation: "{name}"
     instances:
       program_headers:
         pos: program_header_offset
