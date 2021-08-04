@@ -35,7 +35,7 @@ seq:
     contents: [0x05, 0x06]
   - id: body
     type: end_of_central_dir
-    
+  
 types:
   pk_section:
     seq:
@@ -148,6 +148,20 @@ types:
         pos: ofs_local_header
         type: pk_section
     -webide-representation: "{ofs_local_header} {file_name}"
+  id_pair:
+    seq:
+      - id: id
+        type: u4
+      - id: value_len
+        type: u4
+      - id: value_body
+        size: value_len
+  id_pairs:
+    seq:
+      - id: id_pairs
+        type: id_pair
+        repeat: until
+        repeat-until: _.id == 0
   # https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT - 4.3.16
   end_of_central_dir:
     seq:
@@ -175,6 +189,18 @@ types:
         type: pk_section
         repeat: expr
         repeat-expr: num_central_dir_entries_total
+      apk_sig_block_42:
+        pos: ofs_central_dir - 16
+        size: 16
+      signature_size:
+        if: apk_sig_block_42[0] == 65
+        pos: ofs_central_dir - 24
+        type: u8
+      signature_begin:
+        if: apk_sig_block_42[0] == 65
+        pos: ofs_central_dir - signature_size
+        size: signature_size - 24
+        type: id_pairs
   extras:
     seq:
       - id: entries
