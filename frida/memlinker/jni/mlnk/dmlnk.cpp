@@ -8,3 +8,8 @@ extern "C" __attribute__((visibility("default"))) void* dmlnk_dlopen(char* p, in
 extern "C" __attribute__((visibility("default"))) void* dmlnk_dlsym(void* h, char* s) {
     return mlnk_dlsym(h, s);
 }
+
+extern "C" __attribute__((visibility("default"))) void* start_entry(char* p) {
+    void* h = mlnk_dlopen(p, 1);
+    return h;
+}

@@ -91,5 +91,8 @@ ScopeGuard<F> make_scope_guard(F&& f) {
     __typeof__(x) _x2;                                            \
     __builtin_add_overflow(_x, -1, &_x2) ? 1 : ((_x2 & _x) == 0); \
   })
-  
+
+#ifndef R_AARCH64_TLS_DTPREL32
+#define R_AARCH64_TLS_DTPREL32          1031
+#endif
 #endif

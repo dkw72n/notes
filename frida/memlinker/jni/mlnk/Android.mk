@@ -3,6 +3,9 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := mlnk
 LOCAL_SRC_FILES := mlinker.cpp mlinker_phdr.cpp mlinker_mapped_file_fragment.cpp mlinker_utils.cpp
+#LOCAL_CPPFLAGS := -fPIC
+#LOCAL_CFLAGS := -fPIC
+#LOCAL_WHOLE_STATIC_LIBRARIES := libc
 include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)

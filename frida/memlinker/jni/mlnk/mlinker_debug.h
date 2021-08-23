@@ -57,7 +57,7 @@
 #include <android/log.h>
 #include <unistd.h>
 
-#define MLNK_NOISY 0
+// #define MLNK_NOISY 0
 __LIBC_HIDDEN__ extern int g_ld_debug_verbosity;
 
 #define CHECK(predicate) { \

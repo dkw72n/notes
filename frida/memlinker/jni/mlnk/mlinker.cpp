@@ -7,6 +7,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unordered_map>
+#include <errno.h>
 #include "mlinker_sleb128.h"
 #include "mlinker_reloc_iterators.h"
 #include "mlinker_relocs.h"
@@ -22,6 +23,8 @@ extern "C" const char* __gnu_basename(const char* path) {
   const char* last_slash = strrchr(path, '/');
   return (last_slash != nullptr) ? last_slash + 1 : path;
 }
+
+#define basename __gnu_basename
 
 char* linker_get_error_buffer() {
   return &__linker_dl_err_buf[0];
@@ -433,6 +436,13 @@ size_t soinfo::get_verdef_cnt() const {
   }
 
   return 0;
+}
+
+soinfo* soinfo::get_local_group_root() const{
+  return nullptr;
+}
+
+void soinfo::remove_all_links() {
 }
 
 template<typename F>
