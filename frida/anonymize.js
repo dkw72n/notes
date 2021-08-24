@@ -4,8 +4,7 @@ const mmap = new NativeFunction(Module.findExportByName(null, "mmap"), 'pointer'
 const munmap = new NativeFunction(Module.findExportByName(null, "munmap"), 'int', ['pointer', 'size_t'])
 // int munmap(void *addr, size_t length);
 
-function Anonymousify(lib){
-
+function Anonymize(lib){
   Process.enumerateRangesSync('---')
     .filter(function(x){
       return (x.file && x.file.path.indexOf(lib) != -1)
@@ -18,9 +17,8 @@ function Anonymousify(lib){
       mmap(b, sz, 7, 0x22, -1, 0)
       Memory.copy(b, y, sz)
       Memory.protect(b, sz, x.protection)
-      console.log("Anonymousified", x)
+      console.log("👻 anonymized:", x)
     })
-
 }
 
 
