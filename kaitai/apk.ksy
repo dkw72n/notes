@@ -148,6 +148,74 @@ types:
         pos: ofs_local_header
         type: pk_section
     -webide-representation: "{ofs_local_header} {file_name}"
+    
+  length_prefixed:
+    seq:
+      - id: len
+        type: u4
+      - id: body
+        size: len
+  cert_body:
+    seq:
+      - id: len
+        type: u4
+      - id: body
+        size: len
+        type: length_prefixed
+  signature_body:
+    seq:
+      - id: len
+        type: u4
+      - id: id
+        type: u4
+      - id: data
+        size: len - 4
+        type: length_prefixed
+  signature:
+    seq:
+      - id: len
+        type: u4
+      - id: body
+        type: signature_body
+  signed_data_body:
+    seq:
+      - id: digest
+        type: length_prefixed
+      - id: cert
+        type: cert_body
+      - id: attr
+        type: length_prefixed
+  signed_data:
+    seq:
+      - id: len
+        type: u4
+      - id: body
+        type: signed_data_body
+  signer_body:
+    seq:
+      - id: signed_data
+        type: signed_data
+      - id: signature
+        type: signature
+      - id: key
+        type: length_prefixed
+  signer:
+    seq:
+      - id: len
+        type: u4
+      - id: body
+        size: len
+        type: signer_body
+        #repeat: eos
+  whatever:
+    seq:
+      - id: remain
+        size-eos: true
+  signers:
+    seq:
+      - id: signer
+        type: signer
+        repeat: eos
   id_pair:
     seq:
       - id: id
@@ -156,12 +224,22 @@ types:
         type: u4
       - id: value_body
         size: value_len
+        if: value_len != 0
+        type: signers
+        #type: id_pair
+        #repeat: eos
+        #type: lengthed_prefix_data
+        #type: signer
+        #repeat: eos
+        
   id_pairs:
     seq:
       - id: id_pairs
         type: id_pair
         repeat: until
         repeat-until: _.id == 0
+      #- id: remain
+      #  size-eos: true
   # https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT - 4.3.16
   end_of_central_dir:
     seq:
