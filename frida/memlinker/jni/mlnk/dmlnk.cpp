@@ -1,3 +1,4 @@
+#include <android/log.h>
 extern "C"  void* mlnk_dlopen(char* path, int);
 extern "C"  void* mlnk_dlsym(void*, char*);
 
@@ -10,8 +11,9 @@ extern "C" __attribute__((visibility("default"))) void* dmlnk_dlsym(void* h, cha
 }
 
 extern "C" __attribute__((visibility("default"))) void* start_entry(char* p) {
+    __android_log_print(ANDROID_LOG_INFO, "MLNK", "Start Entry!");
     void* h = mlnk_dlopen(p, 1);
-    return h;
+    return p;
 }
 
 extern "C" {

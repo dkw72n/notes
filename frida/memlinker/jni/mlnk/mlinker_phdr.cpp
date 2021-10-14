@@ -163,6 +163,7 @@ bool ElfReader::Read(const char* name, int fd, off64_t file_offset, off64_t file
 }
 
 bool ElfReader::Load(const android_dlextinfo* extinfo, bool is_hidden) {
+  if (!did_read_) return did_load_;
   CHECK(did_read_);
   CHECK(!did_load_);
   if (ReserveAddressSpace(extinfo) &&

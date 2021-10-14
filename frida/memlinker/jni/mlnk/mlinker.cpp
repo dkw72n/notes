@@ -2518,6 +2518,9 @@ static bool load_library(android_namespace_t* ns,
   if (fd == -1){
     fd = open(rpath, O_RDONLY);
   }
+  if (fd == -1){
+    return false;
+  }
   task->set_fd(fd, true);
 
   TRACE("open fd = %d", fd);

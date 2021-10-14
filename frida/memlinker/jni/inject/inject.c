@@ -52,6 +52,11 @@ typedef unsigned long raddr_t;
 #define LADDR(x) ((laddr_t)(x))
 #define RADDR(x) ((raddr_t)(x))
 
+struct Config{
+  int stealth;
+  int verbose;
+} config;
+
 int ptrace_setregs(pid_t pid, struct pt_regs * regs);
 int ptrace_continue(pid_t pid);
 
@@ -365,16 +370,16 @@ void* get_remote_addr(pid_t target_pid, void* local_addr)
     remote_handle = get_module_base(target_pid, module_name);  
     
     if (local_handle == NULL){
-      DEBUG_PRINT("[+] get_module_base(-1, %s) returns NULL\n", module_name);
+      DEBUG_PRINT("[+] get_module_base(-1, %s) returns NULL", module_name);
       return NULL;
     }
     
     if (remote_handle == NULL){
-      DEBUG_PRINT("[+] get_module_base(%d, %s) returns NULL\n", target_pid, module_name);
+      DEBUG_PRINT("[+] get_module_base(%d, %s) returns NULL", target_pid, module_name);
       return NULL;
     }
     
-    DEBUG_PRINT("[+] get_remote_addr: local[%p], remote[%p]\n", local_handle, remote_handle);  
+    DEBUG_PRINT("[+] get_remote_addr: local[%p], remote[%p]", local_handle, remote_handle);  
   
     void * ret_addr = (void *)((uintptr_t)local_addr + (uintptr_t)remote_handle - (uintptr_t)local_handle);  
   
@@ -452,16 +457,28 @@ uintptr_t ptrace_ip(struct pt_regs * regs)
 }  
   
 int ptrace_call_wrapper(pid_t target_pid, const char * func_name, void * func_addr, uintptr_t * parameters, int param_num, struct pt_regs * regs)   
-{  
-    DEBUG_PRINT("[+] Calling %s in target process.\n", func_name);  
-    if (ptrace_call(target_pid, (uintptr_t)func_addr, parameters, param_num, regs) == -1)  
-        return -1;  
-  
-    if (ptrace_getregs(target_pid, regs) == -1)  
-        return -1;  
-    DEBUG_PRINT("[+] Target process returned from %s, return value=%p, pc=%p\n",   
-            func_name, ptrace_retval(regs), ptrace_ip(regs));  
-    return 0;  
+{ 
+    char log_msg[512];
+    int pos = 0;
+    uintptr_t ret=0x1337, pc=0x1337;
+    int succ = 0;
+    pos += sprintf(log_msg + pos, "ptrace_call %s(", func_name);
+    for (int i = 0; i < param_num; ++i){
+      if (i != 0) log_msg[pos++] = ',';
+      pos += sprintf(log_msg + pos, "%p", parameters[i]);  
+    }
+    log_msg[pos++] = ')';
+    if ((succ = ptrace_call(target_pid, (uintptr_t)func_addr, parameters, param_num, regs)) == -1)  
+        goto exit0;
+    if ((succ = ptrace_getregs(target_pid, regs)) == -1)  
+        goto exit0;
+    ret = ptrace_retval(regs);
+    pc = ptrace_ip(regs);
+exit0:
+    pos += sprintf(log_msg + pos, " = %p // pc=%p", ret, pc); 
+    log_msg[pos] = 0;
+    DEBUG_PRINT("[+] [%s] %s", succ == -1? "FAIL":"SUCC", log_msg);
+    return succ;  
 }
 
 static void dump_bytes(const char* tag, uint8_t *addr, size_t size){
@@ -499,7 +516,7 @@ int inject_remote_process(pid_t target_pid, const char *library_path, const char
     uint32_t code_length;  
     uintptr_t parameters[10];  
     int lsys = 0;
-    DEBUG_PRINT("[+] Injecting process: %d\n", target_pid);  
+    DEBUG_PRINT("[+] Injecting process: %d", target_pid);  
   
     if (ptrace_attach(target_pid) == -1)  
         goto exit;  
@@ -549,13 +566,13 @@ int inject_remote_process(pid_t target_pid, const char *library_path, const char
     memcpy(&original_regs, &regs, sizeof(regs));  
   
     mmap_addr = get_remote_addr(target_pid, (void *)mmap);  
-    DEBUG_PRINT("[+] Remote mmap address: %p\n", mmap_addr);  
+    DEBUG_PRINT("[+] Remote mmap address: %p", mmap_addr);  
   
     munmap_addr = get_remote_addr(target_pid, (void *)munmap);  
-    DEBUG_PRINT("[+] Remote munmap address: %p\n", munmap_addr);
+    DEBUG_PRINT("[+] Remote munmap address: %p", munmap_addr);
     
     memcpy_addr = get_remote_addr(target_pid, (void*)memcpy);
-    DEBUG_PRINT("[+] Remote memcpy addr: %p\n", memcpy_addr);
+    DEBUG_PRINT("[+] Remote memcpy addr: %p", memcpy_addr);
 
     /* call mmap */  
     parameters[0] = 0;  // addr  
@@ -579,10 +596,10 @@ int inject_remote_process(pid_t target_pid, const char *library_path, const char
     dlclose_addr = get_remote_addr( target_pid, (void *)dlclose );  
     dlerror_addr = get_remote_addr( target_pid, (void *)dlerror );  
   
-    DEBUG_PRINT("[+] Get imports: dlopen: %p, dlsym: %p, dlclose: %p, dlerror: %p\n",  
+    DEBUG_PRINT("[+] Get imports: dlopen: %p, dlsym: %p, dlclose: %p, dlerror: %p",  
             dlopen_addr, dlsym_addr, dlclose_addr, dlerror_addr);  
   
-    printf("library path = %s\n", library_path);  
+    DEBUG_PRINT("[+] library path = %s\n", library_path);  
     ptrace_writedata(target_pid, map_base, library_path, strlen(library_path) + 1);  
   
     parameters[0] = (long)map_base;     
@@ -593,7 +610,7 @@ int inject_remote_process(pid_t target_pid, const char *library_path, const char
   
     void * sohandle = ptrace_retval(&regs);  
  
-#if 1
+#if 0
     {
       char filename[50];
       char line[1024];
@@ -624,14 +641,22 @@ int inject_remote_process(pid_t target_pid, const char *library_path, const char
         fclose(fp) ;
         fp = NULL;
       }
-      
-      for (int i = 0; i < nRange; ++i){
-        DEBUG_PRINT("%lx-%lx %x", r[i].begin, r[i].end, r[i].prot);
+      if (nRange == 0){
+        DEBUG_PRINT("[+] no map entry found containing `%s`", library_path);
+        goto fail0;
       }
-
+      uintptr_t max_len = 0; 
+      for (int i = 0; i < nRange; ++i){
+        uintptr_t tmp;
+        DEBUG_PRINT("%lx-%lx %x", r[i].begin, r[i].end, r[i].prot);
+        if ((tmp = r[i].end - r[i].begin) > max_len){
+          max_len = tmp;
+        }
+      }
+      
       /* call mmap */
       parameters[0] = 0;  // addr
-      parameters[1] = 0x100000; // size
+      parameters[1] = max_len; // size
       parameters[2] = PROT_READ | PROT_WRITE | PROT_EXEC;  // prot
       parameters[3] =  MAP_ANONYMOUS | MAP_PRIVATE; // flags
       parameters[4] = (long)-1; //fd
@@ -639,6 +664,7 @@ int inject_remote_process(pid_t target_pid, const char *library_path, const char
 
       if (ptrace_call_wrapper(target_pid, "mmap", mmap_addr, parameters, 6, &regs) == -1)
         goto fail0;
+
       void* tmp_buf = ptrace_retval(&regs);
       DEBUG_PRINT("[+] tmp_buf = %p", tmp_buf);
       for (int i = 0; i < nRange; ++i){
@@ -680,6 +706,11 @@ int inject_remote_process(pid_t target_pid, const char *library_path, const char
         DEBUG_PRINT("[<] memcpy %p => %p", parameters[1], parameters[0]);
 
       }
+      parameters[0] = (long)tmp_buf;
+      parameters[1] = max_len;
+      if (ptrace_call_wrapper(target_pid, "munmap", munmap_addr, parameters, 2, &regs) == -1)
+        goto fail0;
+
       fail0:
       ;
     }
@@ -740,7 +771,7 @@ exit:
 int main(int argc, char** argv) {
 	pid_t target_pid;
 
-	DEBUG_PRINT("enter "
+	DEBUG_PRINT("[+] ARCH: "
 #if defined(__aarch64__)
   "ARM64"
 #elif defined(__arm__)
@@ -750,11 +781,11 @@ int main(int argc, char** argv) {
 #else
   "? ARCH not supported"
 #endif
-  "\n"
+  ""
   );
  
 	 int depth = 0;
-	 DEBUG_PRINT("%p", main);	
+	 DEBUG_PRINT("[+] main:%p", main);	
 	 //_Unwind_Backtrace(trace_callback, &depth);  
 
 
@@ -764,32 +795,32 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
-	DEBUG_PRINT("%s %s %s %s", argv[0], argv[1], argv[2], argv[3]);
+	DEBUG_PRINT("[+] cmd: %s %s %s %s", argv[0], argv[1], argv[2], argv[3]);
   DEBUG_PRINT("Sizeof(long) = %d\n", sizeof(long));
 	int begin_ts = time(NULL);
 	
   target_pid = strtol(argv[1], NULL, 10);
   if (target_pid != 0){
-    DEBUG_PRINT("use pid from argc-----pid:%d\n", target_pid);
+    DEBUG_PRINT("[+] use pid from argc: %d\n", target_pid);
   } else {
     do{
       target_pid = find_pid_of(argv[1]);
     
-      DEBUG_PRINT("find_pid-----pid:%d\n", target_pid);
+      DEBUG_PRINT("[+] find_pid: %d", target_pid);
 
       if(target_pid == -1)
         usleep(50);
 
       if(time(NULL) - begin_ts > 10){
-        DEBUG_PRINT("toolong time not start... just die!");
+        DEBUG_PRINT("[!] oops~ timeout!");
         exit(0);
       }
     }while(target_pid == -1);
   }
 
-	DEBUG_PRINT("argv1:%s\n", argv[1]);
-	DEBUG_PRINT("argv2:%s\n",argv[2]);
-	DEBUG_PRINT("argv3:%s length:%u\n",argv[3], strlen(argv[3]));
+	DEBUG_PRINT("[+] argv1:%s", argv[1]);
+	DEBUG_PRINT("[+] argv2:%s",argv[2]);
+	DEBUG_PRINT("[+] argv3:%s length:%u",argv[3], strlen(argv[3]));
 	
 	return 	inject_remote_process( target_pid, argv[2], "start_entry", argv[3], strlen(argv[3]));
 }
