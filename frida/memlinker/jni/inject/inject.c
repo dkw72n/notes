@@ -322,8 +322,54 @@ void* get_module_base(pid_t pid, const char* module_name)
     }  
   
     return (void *)addr;  
-}  
-int get_module_name(void* local_addr, char* module_name, size_t name_size){
+}
+
+
+void* get_module_offset(pid_t pid, const char* module_name, uintptr_t offset)  
+{  
+    FILE *fp;  
+    long addr = 0;  
+    char *pch;  
+    char filename[32];  
+    char line[1024]; 
+    char perm[64];
+    void* ret = NULL;
+
+    if (pid < 0) {  
+        /* self process */  
+        snprintf(filename, sizeof(filename), "/proc/self/maps");  
+    } else {  
+        snprintf(filename, sizeof(filename), "/proc/%d/maps", pid);  
+    }  
+
+ 	DEBUG_PRINT("[-] %s %s(%s, %p)", __FUNCTION__, filename, module_name, offset);
+    fp = fopen(filename, "r");  
+  
+    if (fp != NULL) {  
+        while (fgets(line, sizeof(line), fp)) {  
+          uintptr_t start, end, offs;
+	  int pos, t;
+
+	  if (!strstr(line, module_name)) continue;
+
+          if ((t = sscanf(line, "%lx-%lx %s%lx%*s%*s%n", &start, &end, perm, &offs, &pos)) == 4){
+          	DEBUG_PRINT("[m] %s",line);
+		if (!strstr(perm, "xp"))continue;
+		  if (offset >= offs && offset < offs + end - start){
+			  ret = (void*)(start + offset - offs);
+			  break;
+		  }
+  
+          }  
+        }  
+  
+        fclose(fp) ;  
+    }  
+  
+    return ret;  
+}
+
+int get_module_name(void* local_addr, uintptr_t* module_offset, char* module_name, size_t name_size){
   static char s_line[2048];
   FILE* fp = fopen("/proc/self/maps", "rb");
   if (!fp){
@@ -331,14 +377,15 @@ int get_module_name(void* local_addr, char* module_name, size_t name_size){
           return -1;
   }
   while(fgets(s_line, sizeof(s_line), fp)){
-          int start, end, offset;
-          // DEBUG_PRINT("[!] %s",s_line);
-          if (sscanf(s_line, "%x-%x %*s%*s%*s%*s%n", &start, &end, &offset) == 2){
-                  while (s_line[offset] == ' ') offset += 1;
-                  // DEBUG_PRINT("[-] map line: %08x to %08x", start, end);
-                  if (start <= (int)local_addr && end > (int)local_addr){
+          uintptr_t start, end, offset;
+	  int pos, t;
+          // DEBUG_PRINT("[ ] %s",s_line);
+          if ((t = sscanf(s_line, "%lx-%lx %*s%lx%*s%*s%n", &start, &end, &offset, &pos)) == 3){
+                  while (s_line[pos] == ' ') pos += 1;
+	    	  // DEBUG_PRINT("[-] map line: %08llx to %08llx", start, end);
+                  if (start <= (uintptr_t)local_addr && end > (uintptr_t)local_addr){
                           int l;
-                          strncpy(module_name, s_line + offset, name_size);
+                          strncpy(module_name, s_line + pos, name_size);
                           l = strlen(module_name);
                           while (l){
                                   if(module_name[l - 1] == '\r' || module_name[l-1] == '\n' || module_name[l-1] == ' '){
@@ -348,9 +395,13 @@ int get_module_name(void* local_addr, char* module_name, size_t name_size){
                                   }
                           }
                           module_name[l] = 0;
+			  *module_offset = offset + local_addr - start;
+			  DEBUG_PRINT("[+] found local entry %lx-%lx %lx %s", start, end, offset, module_name);
                           return 0;
                   }
-          }
+          } else {
+		  DEBUG_PRINT("[-] sscanf failed: %d", t);
+	  }
   }
   DEBUG_PRINT("[!] get no module name for addresss %p", local_addr);
   fclose(fp);
@@ -360,35 +411,26 @@ int get_module_name(void* local_addr, char* module_name, size_t name_size){
   
 void* get_remote_addr(pid_t target_pid, void* local_addr)  
 {  
-    void* local_handle, *remote_handle;
-  char module_name[256];
-	if (get_module_name(local_addr, module_name, 256) != 0){
-          return NULL;
-  	}
-  
-    local_handle = get_module_base(-1, module_name);  
-    remote_handle = get_module_base(target_pid, module_name);  
-    
-    if (local_handle == NULL){
-      DEBUG_PRINT("[+] get_module_base(-1, %s) returns NULL", module_name);
-      return NULL;
-    }
-    
-    if (remote_handle == NULL){
-      DEBUG_PRINT("[+] get_module_base(%d, %s) returns NULL", target_pid, module_name);
-      return NULL;
-    }
-    
-    DEBUG_PRINT("[+] get_remote_addr: local[%p], remote[%p]", local_handle, remote_handle);  
-  
-    void * ret_addr = (void *)((uintptr_t)local_addr + (uintptr_t)remote_handle - (uintptr_t)local_handle);  
-  
+	void* local_handle, *remote_handle;
+	uintptr_t offset;
+	char module_name[256];
+	if (get_module_name(local_addr, &offset, module_name, 256) != 0){
+		return NULL;
+	}
+
+
+	void* ret_addr = get_module_offset(target_pid, module_name, offset);  
+
+
+	DEBUG_PRINT("[+] get_remote_addr: local[%p], remote[%p]", local_addr, ret_addr);  
+
+
 #if defined(__i386__)  && 0
-    if (!strcmp(module_name, libc_path)) {  
-        ret_addr += 2;  
-    }  
+	if (!strcmp(module_name, libc_path)) {  
+		ret_addr += 2;  
+	}  
 #endif  
-    return ret_addr;  
+	return ret_addr;  
 }  
   
 int find_pid_of(const char *process_name)  
