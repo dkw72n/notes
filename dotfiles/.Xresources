@@ -23,6 +23,9 @@ URxvt.keysym.C-equal:      resize-font:bigger
 URxvt.keysym.C-0:     resize-font:reset
 ! URxvt.keysym.C-question:  resize-font:show
 
+! default input method
+URxvt.inputMethod:fcitx
+
 !!! special
 !!*.foreground:   #eceff1
 !!*.background:   #263238
