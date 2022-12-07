@@ -1,0 +1,48 @@
+0. product-specific repos are pulled by roomservice.py: android_vendor_lineage/build/tools/roomservice.py
+1. git clone git@github.com:LineageOS/android_device_oneplus_oneplus3.git --depth=1 -b lineage-18.1 device/oneplus/oneplus3
+2. check device/oneplus/oneplus3/lineage.dependencies for dependencies
+  2.1 git clone git@github.com:LineageOS/android_device_oppo_common.git --depth=1 -b lineage-18.1 device/oppo/common
+  2.2 git clone git@github.com:LineageOS/android_kernel_oneplus_msm8996.git --depth=1 -b lineage-18.1 kernel/oneplus/msm8996
+3. fetch toolchain by reading default.xml
+  3.1 git clone git@github.com:LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git --depth=1 -b lineage-18.1 prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
+  3.2 git clone git@github.com:LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git --depth=1 -b lineage-18.1 prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9
+  3.3 git clone https://android.googlesource.com/platform/prebuilts/gdb/linux-x86 -b android-11.0.0_r46 --depth=1 prebuilts/gdb/linux-x86
+4. ```
+export O=out
+export ARCH=arm64
+export SUBARCH=arm
+export PATH=/home/ljanjun/Code/Android/lineage/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:/home/ljanjun/Code/Android/lineage/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/:$PATH
+export CROSS_COMPILE_ARM32=arm-linux-androideabi-
+export CROSS_COMPILE=aarch64-linux-android-
+
+set -ex
+
+test -d $O || make O=$O ARCH=$ARCH SUBARCH=$SUBARCH lineageos_oneplus3_defconfig
+
+make -j$(nproc) O=$O ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE CROSS_COMPILE_ARM32=$CROSS_COMPILE_ARM32
+```
+
+git clone git@github.com:LineageOS/android_system_tools_mkbootimg.git -b lineage-18.1 --depth=1 system/tools/mkbootimg
+
+~/Code/Android/lineage/system/tools/mkbootimg$
+
+boot_magic: ANDROID!
+kernel_size: 10914163
+kernel load address: 0x80008000
+ramdisk size: 834794
+ramdisk load address: 0x81000000
+second bootloader size: 0
+second bootloader load address: 0x0
+kernel tags load address: 0x80000100
+page size: 4096
+os version: 11.0.0
+os patch level: 2021-10
+boot image header version: 0
+product name: 
+command line args: androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x237 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 cma=32M@0-0xffffffff loop.max_part=7 buildvariant=userdebug
+additional command line args:
+
+./mkbootimg.py --kernel ~/Code/Android/lineage/kernel/oneplus/msm8996/out/arch/arm64/boot/Image.gz-dtb --ramdisk tmp/ramdisk --tags_offset 0x80000100 --pagesize 4096 --kernel_offset 0x80008000 --ramdisk_offset 0x81000000 --os_version 11.0.0 --os_patch_level 2021-10 --cmdline "androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x237 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 cma=32M@0-0xffffffff loop.max_part=7 buildvariant=userdebug" -o boot.img
+
+导出头文件 
+make headers_install
