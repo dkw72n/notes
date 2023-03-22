@@ -1,0 +1,7 @@
+$git branch -v
+* (no branch) 67e7f2893 lib/decompress_unlz4.c: correctly handle zero-padding around initrds.
+
+$ git remote -v
+origin	https://github.com/engstk/op8.git (fetch)
+origin	https://github.com/engstk/op8.git (push)
+

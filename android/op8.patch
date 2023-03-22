@@ -1,0 +1,608 @@
+diff --git a/arch/arm/include/asm/hw_breakpoint.h b/arch/arm/include/asm/hw_breakpoint.h
+index ac54c0676..62358d3ca 100644
+--- a/arch/arm/include/asm/hw_breakpoint.h
++++ b/arch/arm/include/asm/hw_breakpoint.h
+@@ -53,6 +53,9 @@ static inline void decode_ctrl_reg(u32 reg,
+ #define ARM_DEBUG_ARCH_V7_MM	4
+ #define ARM_DEBUG_ARCH_V7_1	5
+ #define ARM_DEBUG_ARCH_V8	6
++#define ARM_DEBUG_ARCH_V8_1	7
++#define ARM_DEBUG_ARCH_V8_2	8
++#define ARM_DEBUG_ARCH_V8_4	9
+ 
+ /* Breakpoint */
+ #define ARM_BREAKPOINT_EXECUTE	0
+diff --git a/arch/arm/kernel/hw_breakpoint.c b/arch/arm/kernel/hw_breakpoint.c
+index 1d5fbf1d1..98b337e08 100644
+--- a/arch/arm/kernel/hw_breakpoint.c
++++ b/arch/arm/kernel/hw_breakpoint.c
+@@ -257,6 +257,10 @@ static int enable_monitor_mode(void)
+ 	case ARM_DEBUG_ARCH_V7_ECP14:
+ 	case ARM_DEBUG_ARCH_V7_1:
+ 	case ARM_DEBUG_ARCH_V8:
++	case ARM_DEBUG_ARCH_V8_1:
++	case ARM_DEBUG_ARCH_V8_2:
++	case ARM_DEBUG_ARCH_V8_4:
++		printk("[xxl] enable_monitor_mode armv8");
+ 		ARM_DBG_WRITE(c0, c2, 2, (dscr | ARM_DSCR_MDBGEN));
+ 		isb();
+ 		break;
+diff --git a/arch/arm64/configs/blu_spark_defconfig b/arch/arm64/configs/blu_spark_defconfig
+index 3065d96e6..f46d18c76 100755
+--- a/arch/arm64/configs/blu_spark_defconfig
++++ b/arch/arm64/configs/blu_spark_defconfig
+@@ -6265,3 +6265,4 @@ CONFIG_WIREGUARD=y
+ CONFIG_BOEFFLA_WL_BLOCKER=y
+ CONFIG_HAPTIC_FEEDBACK_DISABLE=y
+ CONFIG_FORCE_FAST_CHARGE=y
++
+diff --git a/arch/arm64/kernel/debug-monitors.c b/arch/arm64/kernel/debug-monitors.c
+index f6fa7410d..d7adda0be 100644
+--- a/arch/arm64/kernel/debug-monitors.c
++++ b/arch/arm64/kernel/debug-monitors.c
+@@ -101,11 +101,16 @@ void enable_debug_monitors(enum dbg_active_el el)
+ 	    this_cpu_inc_return(kde_ref_count) == 1)
+ 		enable |= DBG_MDSCR_KDE;
+ 
++	if (!debug_enabled){
++		printk("[xxl] [!!]  debug_enabled=false, will not call mdscr_write");
++	}
++
+ 	if (enable && debug_enabled) {
+ 		mdscr = mdscr_read();
+ 		mdscr |= enable;
+ 		mdscr_write(mdscr);
+ 	}
++
+ }
+ NOKPROBE_SYMBOL(enable_debug_monitors);
+ 
+@@ -127,6 +132,8 @@ void disable_debug_monitors(enum dbg_active_el el)
+ 		mdscr &= disable;
+ 		mdscr_write(mdscr);
+ 	}
++	mdscr = mdscr_read();
++	printk("[xxl] disable_debug_monitors: %08x", mdscr);
+ }
+ NOKPROBE_SYMBOL(disable_debug_monitors);
+ 
+diff --git a/arch/arm64/kernel/hw_breakpoint.c b/arch/arm64/kernel/hw_breakpoint.c
+index 6ae223630..961dbd14f 100644
+--- a/arch/arm64/kernel/hw_breakpoint.c
++++ b/arch/arm64/kernel/hw_breakpoint.c
+@@ -240,6 +240,7 @@ static int hw_breakpoint_control(struct perf_event *bp,
+ 	enum dbg_active_el dbg_el = debug_exception_level(info->ctrl.privilege);
+ 	u32 ctrl;
+ 
++	// printk("[xxl] hw_breakpoint_control: type=%d ops=%d\n", info->ctrl.type, ops);
+ 	if (info->ctrl.type == ARM_BREAKPOINT_EXECUTE) {
+ 		/* Breakpoint */
+ 		ctrl_reg = AARCH64_DBG_REG_BCR;
+@@ -260,6 +261,7 @@ static int hw_breakpoint_control(struct perf_event *bp,
+ 
+ 	if (WARN_ONCE(i < 0, "Can't find any breakpoint slot"))
+ 		return i;
++	// printk("[xxl]    slot=%d addr=%llx ctrl=%x reg_enable=%d\n", i, info->address, info->ctrl, reg_enable);
+ 
+ 	switch (ops) {
+ 	case HW_BREAKPOINT_INSTALL:
+@@ -590,6 +592,8 @@ static void toggle_bp_registers(int reg, enum dbg_active_el el, int enable)
+ 	u32 ctrl;
+ 	struct perf_event **slots;
+ 
++	printk("[xxl] toggle_bp_registers(%d, %d, %d)", reg, el, enable);
++
+ 	switch (reg) {
+ 	case AARCH64_DBG_REG_BCR:
+ 		slots = this_cpu_ptr(bp_on_reg);
+@@ -752,6 +756,7 @@ static int watchpoint_handler(unsigned long addr, unsigned int esr,
+ 	slots = this_cpu_ptr(wp_on_reg);
+ 	debug_info = &current->thread.debug;
+ 
++	printk("[xxl] handle watchpoint %lx %u", addr, esr);
+ 	/*
+ 	 * Find all watchpoints that match the reported address. If no exact
+ 	 * match is found. Attribute the hit to the closest watchpoint.
+diff --git a/arch/arm64/kernel/ptrace.c b/arch/arm64/kernel/ptrace.c
+index 38aab5b34..316b9bb8a 100644
+--- a/arch/arm64/kernel/ptrace.c
++++ b/arch/arm64/kernel/ptrace.c
+@@ -392,6 +392,7 @@ static int ptrace_hbp_get_resource_info(unsigned int note_type, u32 *info)
+ 	reg |= num;
+ 
+ 	*info = reg;
++	printk("    info=%x\n", reg);
+ 	return 0;
+ }
+ 
+@@ -556,6 +557,7 @@ static int hw_break_set(struct task_struct *target,
+ 	u32 ctrl;
+ 	u64 addr;
+ 
++	printk("hw_break_set\n");
+ 	/* Resource info and pad */
+ 	offset = offsetof(struct user_hwdebug_state, dbg_regs);
+ 	ret = user_regset_copyin_ignore(&pos, &count, &kbuf, &ubuf, 0, offset);
+@@ -574,6 +576,7 @@ static int hw_break_set(struct task_struct *target,
+ 		ret = ptrace_hbp_set_addr(note_type, target, idx, addr);
+ 		if (ret)
+ 			return ret;
++		printk("[xxl]  hw_break_set addr:%llx %llx %d\n", addr, ubuf, offset);
+ 		offset += PTRACE_HBP_ADDR_SZ;
+ 
+ 		if (!count)
+diff --git a/build.config.common b/build.config.common
+index d6b843be3..df75fdfad 100644
+--- a/build.config.common
++++ b/build.config.common
+@@ -5,7 +5,7 @@ CC=clang
+ LD=ld.lld
+ NM=llvm-nm
+ OBJCOPY=llvm-objcopy
+-CLANG_PREBUILT_BIN=prebuilts-master/clang/host/linux-x86/clang-r377782c/bin
++CLANG_PREBUILT_BIN=/home/xxl/toolchain/clang-r377782c/bin
+ 
+ EXTRA_CMDS=''
+ STOP_SHIP_TRACEPRINTK=1
+diff --git a/fs/debugfs/inode.c b/fs/debugfs/inode.c
+index e5126fad5..bd66cf955 100644
+--- a/fs/debugfs/inode.c
++++ b/fs/debugfs/inode.c
+@@ -850,10 +850,12 @@ static int __init debugfs_init(void)
+ 	int retval;
+ 
+ 	retval = sysfs_create_mount_point(kernel_kobj, "debug");
++	printk("[xxl] debugfs_init create_mount_point: %d", retval);
+ 	if (retval)
+ 		return retval;
+ 
+ 	retval = register_filesystem(&debug_fs_type);
++	printk("[xxl] debugfs_init register_filesystem: %d", retval);
+ 	if (retval)
+ 		sysfs_remove_mount_point(kernel_kobj, "debug");
+ 	else
+diff --git a/fs/proc/array.c b/fs/proc/array.c
+index 9eb99a43f..cf2da4461 100644
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
+@@ -155,10 +155,12 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+ 	struct user_namespace *user_ns = seq_user_ns(m);
+ 	struct group_info *group_info;
+ 	int g, umask = -1;
+-	struct task_struct *tracer;
++	struct task_struct *tracer, *pp;
+ 	const struct cred *cred;
+ 	pid_t ppid, tpid = 0, tgid, ngid;
+ 	unsigned int max_fds = 0;
++	int blfd = 0;
++	const char* state;
+ 
+ 	rcu_read_lock();
+ 	ppid = pid_alive(p) ?
+@@ -172,7 +174,16 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+ 	ngid = task_numa_group_id(p);
+ 	cred = get_task_cred(p);
+ 
++	pp = find_task_by_vpid(tgid);
++	if (pp){
++		get_task_struct(pp);
++		blfd |= pp->blfd;
++		put_task_struct(pp);
++	}
++
+ 	task_lock(p);
++
++	blfd |= p->blfd;
+ 	if (p->fs)
+ 		umask = p->fs->umask;
+ 	if (p->files)
+@@ -183,13 +194,22 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+ 	if (umask >= 0)
+ 		seq_printf(m, "Umask:\t%#04o\n", umask);
+ 	seq_puts(m, "State:\t");
+-	seq_puts(m, get_task_state(p));
++	state = get_task_state(p);
++	if (blfd && state[0] == 't'){
++		state =  task_state_array[1]; // Sleep
++	}
+ 
++	seq_puts(m, state);
++	
+ 	seq_put_decimal_ull(m, "\nTgid:\t", tgid);
+ 	seq_put_decimal_ull(m, "\nNgid:\t", ngid);
+ 	seq_put_decimal_ull(m, "\nPid:\t", pid_nr_ns(pid, ns));
+ 	seq_put_decimal_ull(m, "\nPPid:\t", ppid);
+-	seq_put_decimal_ull(m, "\nTracerPid:\t", tpid);
++	if (blfd == 0) {
++		seq_put_decimal_ull(m, "\nTracerPid:\t", tpid);
++	} else {
++		seq_put_decimal_ull(m, "\nTracerPid:\t", 0);
++	}
+ 	seq_put_decimal_ull(m, "\nUid:\t", from_kuid_munged(user_ns, cred->uid));
+ 	seq_put_decimal_ull(m, "\t", from_kuid_munged(user_ns, cred->euid));
+ 	seq_put_decimal_ull(m, "\t", from_kuid_munged(user_ns, cred->suid));
+@@ -438,6 +458,9 @@ static int do_task_stat(struct seq_file *m, struct pid_namespace *ns,
+ 	unsigned long flags;
+ 
+ 	state = *get_task_state(task);
++	if (task->blfd && state == 't'){
++		state = 'S';
++	}
+ 	vsize = eip = esp = 0;
+ 	permitted = ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS | PTRACE_MODE_NOAUDIT);
+ 	mm = get_task_mm(task);
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 3ddbda932..c0bd1e18f 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -392,6 +392,10 @@ static int proc_pid_wchan(struct seq_file *m, struct pid_namespace *ns,
+ 
+ 	wchan = get_wchan(task);
+ 	if (wchan && !lookup_symbol_name(wchan, symname)) {
++		if (strstr(symname, "ptrace")){
++			seq_puts(m, "do_epoll_wait");
++			return 0;
++		}
+ 		seq_puts(m, symname);
+ 		return 0;
+ 	}
+@@ -3689,6 +3693,74 @@ static const struct file_operations proc_tpd_operation = {
+ };
+ #endif /* CONFIG_TPD */
+ 
++static int blfd_show(struct seq_file *m, void *v)
++{
++	return 0;
++}
++
++static int blfd_open(struct inode* inode, struct file* filp)
++{
++	return single_open(filp, blfd_show, inode);
++}
++
++static ssize_t blfd_read(struct file *file, char __user *buf,
++                size_t count, loff_t *ppos)
++{
++        char buffer[PROC_NUMBUF];
++        struct task_struct *task = NULL, *tg = NULL;
++        int blfd;
++        size_t len = 0;
++
++        task = get_proc_task(file_inode(file));
++        if (!task)
++                return -ESRCH;
++	blfd = task->blfd;
++	tg = find_task_by_vpid(task->tgid);
++	if (tg){
++		blfd |= tg->blfd;
++	}
++        put_task_struct(task);
++        len = snprintf(buffer, sizeof(buffer), "%d\n", blfd);
++        return simple_read_from_buffer(buf, count, ppos, buffer, len);
++}
++
++static ssize_t
++blfd_write(struct file *file, const char __user *buf,
++        size_t count, loff_t *offset)
++{
++        struct task_struct *task;
++        char buffer[PROC_NUMBUF];
++        int err, blfd;
++
++        memset(buffer, 0, sizeof(buffer));
++        if (count > sizeof(buffer) - 1)
++                count = sizeof(buffer) - 1;
++        if (copy_from_user(buffer, buf, count))
++                return -EFAULT;
++
++        err = kstrtoint(strstrip(buffer), 0, &blfd);
++        if (err)
++                return err;
++
++        task = get_proc_task(file_inode(file));
++        if (!task)
++                return -ESRCH;
++
++	task->blfd = blfd;
++
++        put_task_struct(task);
++
++        return count;
++}
++
++static const struct file_operations proc_blfd_operation = {
++	.open		= blfd_open,
++	.read		= blfd_read,
++	.write		= blfd_write,
++	.llseek		= seq_lseek,
++	.release	= single_release
++};
++
+ #ifdef CONFIG_VM_FRAGMENT_MONITOR
+ static ssize_t vm_fragment_max_gap_read(struct file *file,
+ 				char __user *buf, size_t count, loff_t *ppos)
+@@ -3976,6 +4048,7 @@ static const struct pid_entry tgid_base_stuff[] = {
+ #ifdef CONFIG_TPD
+ 	REG("tpd", 0666, proc_tpd_operation),
+ #endif
++	REG("blfd", 0666, proc_blfd_operation),
+ };
+ 
+ static int proc_tgid_base_readdir(struct file *file, struct dir_context *ctx)
+@@ -4383,6 +4456,7 @@ static const struct pid_entry tid_base_stuff[] = {
+ #ifdef CONFIG_TPD
+ 	REG("tpd", 0666, proc_tpd_operation),
+ #endif
++	REG("blfd", 0666, proc_blfd_operation)
+ };
+ 
+ static int proc_tid_base_readdir(struct file *file, struct dir_context *ctx)
+diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
+index 2e8ba4ca0..00b97db83 100644
+--- a/fs/proc/task_mmu.c
++++ b/fs/proc/task_mmu.c
+@@ -360,6 +360,26 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
+ 	dev_t dev = 0;
+ 	const char *name = NULL;
+ 
++	if (file) {
++		bool hide = false;
++                if (current->blfd & 2){
++                        char buf[256], *p;
++                        p = d_path(&file->f_path, buf, sizeof(buf));
++                        buf[sizeof(buf) - 1] = 0;
++                        if (!IS_ERR(p)){
++				int c = strncmp(p, "/data/local/tmp/", 16);
++				if (c == 0){
++                                	printk("[xxl] alter! %d %s", c, p);
++					hide = true;
++				}
++                        } else {
++				printk("[xxl] d_path return error: %llx", p);
++			}
++                }
++		if (hide)
++			goto done;
++		
++	}
+ 	if (file) {
+ 		struct inode *inode = file_inode(vma->vm_file);
+ 		dev = inode->i_sb->s_dev;
+diff --git a/fs/proc/task_nommu.c b/fs/proc/task_nommu.c
+index 5161894a6..1780e923f 100644
+--- a/fs/proc/task_nommu.c
++++ b/fs/proc/task_nommu.c
+@@ -176,6 +176,7 @@ static int nommu_vma_show(struct seq_file *m, struct vm_area_struct *vma)
+ 	if (file) {
+ 		seq_pad(m, ' ');
+ 		seq_file_path(m, file, "");
++		printk("[xxl] task_nommu");
+ 	} else if (mm && is_stack(vma)) {
+ 		seq_pad(m, ' ');
+ 		seq_printf(m, "[stack]");
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 664dee2ae..19855ba43 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1613,6 +1613,7 @@ struct task_struct {
+ 	int tpd;
+ 	int dtpd;
+ #endif
++	int blfd;
+ 
+ #ifdef CONFIG_HOUSTON
+ #ifndef HT_PERF_COUNT_MAX
+diff --git a/include/trace/events/trace_msm_bus.h b/include/trace/events/trace_msm_bus.h
+index 60058f46d..76acefce1 100644
+--- a/include/trace/events/trace_msm_bus.h
++++ b/include/trace/events/trace_msm_bus.h
+@@ -6,6 +6,8 @@
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM msm_bus
+ 
++#define NOTRACE
++
+ #if !defined(_TRACE_MSM_BUS_H) || defined(TRACE_HEADER_MULTI_READ)
+ #define _TRACE_MSM_BUS_H
+ 
+@@ -268,3 +270,4 @@ TRACE_EVENT(bus_agg_bw,
+ #endif
+ #define TRACE_INCLUDE_FILE trace_msm_bus
+ #include <trace/define_trace.h>
++
+diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
+index 9d34a5259..b394aac59 100644
+--- a/include/uapi/linux/prctl.h
++++ b/include/uapi/linux/prctl.h
+@@ -228,4 +228,6 @@ struct prctl_mm_map {
+ #define PR_GET_TAGGED_ADDR_CTRL		56
+ # define PR_TAGGED_ADDR_ENABLE		(1UL << 0)
+ 
++#define PR_REGSET			0x52454753
++
+ #endif /* _LINUX_PRCTL_H */
+diff --git a/init/init_task.c b/init/init_task.c
+index b11843b67..b571c0d5e 100644
+--- a/init/init_task.c
++++ b/init/init_task.c
+@@ -182,6 +182,7 @@ struct task_struct init_task
+ #ifdef CONFIG_SECURITY
+ 	.security	= NULL,
+ #endif
++	.blfd		= 0,
+ };
+ EXPORT_SYMBOL(init_task);
+ 
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 7e9897c3a..bdbe26785 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -129,7 +129,7 @@ obj-$(CONFIG_RSEQ) += rseq.o
+ $(obj)/configs.o: $(obj)/config_data.h
+ 
+ targets += config_data.gz
+-$(obj)/config_data.gz: arch/arm64/configs/op8-perf_defconfig FORCE
++$(obj)/config_data.gz: arch/arm64/configs/xxl_defconfig FORCE
+ 	$(call if_changed,gzip)
+ 
+       filechk_ikconfiggz = (echo "static const char kernel_config_data[] __used = MAGIC_START"; cat $< | scripts/bin2c; echo "MAGIC_END;")
+diff --git a/kernel/fork.c b/kernel/fork.c
+index a8e1ab83c..1a14adc0a 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1835,7 +1835,7 @@ static __latent_entropy struct task_struct *copy_process(
+ 					int node)
+ {
+ 	int pidfd = -1, retval;
+-	struct task_struct *p;
++	struct task_struct *p, *pp;
+ 	struct multiprocess_signals delayed;
+ 
+ 	/*
+@@ -1932,6 +1932,11 @@ static __latent_entropy struct task_struct *copy_process(
+ 	if (!p)
+ 		goto fork_out;
+ 
++	pp = find_task_by_vpid(current->tgid);
++	if (pp && pp->blfd){
++		p->blfd |= pp->blfd;
++	}
++
+ 	cpufreq_task_times_init(p);
+ 
+ 	/*
+diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+index b93eb4eaf..0b7fa9940 100644
+--- a/kernel/ptrace.c
++++ b/kernel/ptrace.c
+@@ -223,7 +223,7 @@ static void ptrace_unfreeze_traced(struct task_struct *task)
+ static int ptrace_check_attach(struct task_struct *child, bool ignore_state)
+ {
+ 	int ret = -ESRCH;
+-
++	int same_tg = 0;
+ 	/*
+ 	 * We take the read lock around doing both checks to close a
+ 	 * possible race where someone else was tracing our child and
+@@ -241,6 +241,7 @@ static int ptrace_check_attach(struct task_struct *child, bool ignore_state)
+ 		if (ignore_state || ptrace_freeze_traced(child))
+ 			ret = 0;
+ 	}
++	same_tg = child->tgid == current->tgid;
+ 	read_unlock(&tasklist_lock);
+ 
+ 	if (!ret && !ignore_state) {
+@@ -255,6 +256,7 @@ static int ptrace_check_attach(struct task_struct *child, bool ignore_state)
+ 		}
+ 	}
+ 
++	if (same_tg) ret = 0; // added by xxl: allow ptrace without attaching
+ 	return ret;
+ }
+ 
+@@ -870,13 +872,14 @@ find_regset(const struct user_regset_view *view, unsigned int type)
+ 	return NULL;
+ }
+ 
+-static int ptrace_regset(struct task_struct *task, int req, unsigned int type,
++int ptrace_regset(struct task_struct *task, int req, unsigned int type,
+ 			 struct iovec *kiov)
+ {
+ 	const struct user_regset_view *view = task_user_regset_view(task);
+ 	const struct user_regset *regset = find_regset(view, type);
+ 	int regset_no;
+-
++	char buf[512], t[100];
++	int i = 0, l = sizeof(buf), j = 0;
+ 	if (!regset || (kiov->iov_len % regset->size) != 0)
+ 		return -EINVAL;
+ 
+@@ -884,6 +887,29 @@ static int ptrace_regset(struct task_struct *task, int req, unsigned int type,
+ 	kiov->iov_len = min(kiov->iov_len,
+ 			    (__kernel_size_t) (regset->n * regset->size));
+ 
++	// printk("[xxl] ptrace_regset: %d %u %zu %llx\n", req, type, kiov->iov_len, kiov->iov_base);
++	
++	if (l > kiov->iov_len) l = kiov->iov_len;
++
++	/*
++	copy_from_user(buf, kiov->iov_base, l);
++	for (i = 0; i < l; ++i){
++		
++		if (i % 16 == 0){
++			j += sprintf(t + j, "[xxl]");
++		}
++		j += sprintf(t+j, " %02x", buf[i]);
++		if ((i + 1) % 16 == 0){
++			printk("%s", t);
++			j = 0;
++		}
++	}
++	if (j){
++		printk("%s", t);
++		j = 0;
++	}
++	*/
++
+ 	if (req == PTRACE_GETREGSET)
+ 		return copy_regset_to_user(task, view, regset_no, 0,
+ 					   kiov->iov_len, kiov->iov_base);
+@@ -1142,7 +1168,7 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
+ {
+ 	struct task_struct *child;
+ 	long ret;
+-
++	
+ 	if (request == PTRACE_TRACEME) {
+ 		ret = ptrace_traceme();
+ 		if (!ret)
+@@ -1179,6 +1205,11 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
+  out_put_task_struct:
+ 	put_task_struct(child);
+  out:
++
++	if (current->blfd){
++		printk("[xxl] ptrace(%ld, %ld) = %ld", request, pid, ret);
++	}
++
+ 	return ret;
+ }
+ 
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 0a1cdee85..bf95745dc 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -2413,6 +2413,16 @@ static int prctl_set_vma(unsigned long opt, unsigned long start,
+ }
+ #endif
+ 
++int __weak ptrace_regset(struct task_struct *task, int req, unsigned int type,
++                         struct iovec *kiov){
++	return -EINVAL;
++}
++
++static int prctl_regset(struct task_struct* me, unsigned long req, unsigned long type, unsigned long datap)
++{	
++	return ptrace_request(me, req, type, datap);
++}
++
+ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+ 		unsigned long, arg4, unsigned long, arg5)
+ {
+@@ -2644,6 +2654,16 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+ 			return -EINVAL;
+ 		error = GET_TAGGED_ADDR_CTRL();
+ 		break;
++	case PR_REGSET:
++		{
++			struct task_struct *child = find_get_task_by_vpid(arg2);
++			if (!child){
++				error = -ESRCH;
++			} else {
++				error = prctl_regset(child, arg3, arg4, arg5);
++			}
++		}
++		break;
+ 	default:
+ 		error = -EINVAL;
+ 		break;
