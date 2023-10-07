@@ -1,0 +1,263 @@
+> c:\windows\system32\cmdiag.exe Help
+容器管理器诊断工具
+
+用法: CmDiag [command] [options]
+
+命令:
+  Help             - 显示此帮助消息。
+  Enumerate        - 枚举现有容器。
+  Debug            - 配置容器调试选项。
+  TestSign         - 配置测试签名。
+  Exec             - 在给定容器上下文中执行进程。
+  Console          - 在容器上下文中执行控制台进程。
+  Map              - 将主机文件夹映射到给定容器中。
+  Unmap            - 从容器中取消映射文件夹。
+  Terminate        - 终止容器。
+  StartActivity    - 在容器上启动活动。
+  Pause            - 为容器配置暂停策略。
+  Copy             - 将私有文件复制到容器的基本映像。
+  DevelopmentMode  - 为开发模式配置容器管理器。
+
+
+CmDiag 失败，错误代码: 0x80070057
+
+
+
+> c:\windows\system32\cmdiag.exe Enumerate -help
+|
+|
+
+|
+枚举现有容器。
+
+选项:
+  无。
+
+示例:
+  CmDiag 枚举
+
+
+
+
+> c:\windows\system32\cmdiag.exe Debug -help
+配置容器调试选项。
+
+选项:
+  -On                 - 启用容器调试。
+    -(Serial|Net)     -   选择要配置的调试类型。
+    [-Port p]         -   如果是 net 调试，请指定要使用的端口(默认情况下，端口为 50000)。
+    [-Key k]          -   如果是 net 调试，请指定要使用的密钥(默认情况下，密钥为 cl.ea.rt.ext)。
+    [-HostIP h]       -   如果是 net 调试，请指定调试程序主机的 IP 地址。
+    [-NoTestSign]     -   不配置测试签名(默认情况下，启用测试签名)。
+    [-NoBootDebug]    -   不配置启动调试(默认情况下，启用启动调试)。
+    [-AllowDirectMap] -   允许直接映射的二进制文件(默认情况下，禁用直接映射)。
+    [-Force]          -   终止任何正在运行的容器(调试选项不能应用于正在运行的容器)。
+
+  -Off                - 禁用容器调试。
+    [-Force]          -   终止任何正在运行的容器(调试选项不能应用于正在运行的容器)。
+
+示例:
+  CmDiag Debug -on -net
+  CmDiag Debug -on -serial -NoBootDebug -force
+  CmDiag Debug -off
+
+
+
+
+> c:\windows\system32\cmdiag.exe TestSign -help
+配置测试签名。
+
+选项:
+  -On        - 启用测试签名。请注意，默认情况下，启用调试还将启用测试签名。
+    [-Force] - 终止任何正在运行的容器(测试签名不适用于正在运行的容器)。
+
+  -Off       - 禁用测试签名。请注意，禁用调试还将禁用测试签名。
+    [-Force] - 终止任何正在运行的容器(测试签名不适用于正在运行的容器)。
+
+示例:
+  CmDiag TestSign -on
+  CmDiag TestSign -off -force
+
+
+
+
+> c:\windows\system32\cmdiag.exe Exec -help
+
+在目标容器的上下文中使用参数执行给定进程。
+
+选项:
+  -Command <命令行>
+        - 要执行的命令行。如果命令行中存在空格，必须使用引号。
+          如果未指定选项，则假设参数为命令行。
+
+  [-NoWait]
+        - 不等待目标进程终止。同时忽略其标准输出。
+
+  [-WorkingDirectory <目录>]
+        - 指定在容器中创建进程时要使用的工作目录。
+
+  [-RunAs <用户名>]
+        - 指定在容器中创建流程时要使用的用户。
+
+  [-ExistingLogin]
+        - 对 RunAs 参数中指定的用户使用现有登录会话。仅当
+          设置了 RunAs 参数且 RunAs 参数中指定的用户
+          已在容器内登录时，才能设置此标志。
+
+示例:
+  CmDiag Exec 0a1b3c cmd.exe /c echo "Hello World"
+  CmDiag Exec 0a1b3c -NoWait -Command notepad.exe
+  CmDiag Exec 1afa8bfe-1066-4c94-adc2-a6e9c028a2d0 -Command "cmd.exe /c echo 1 > c:\tmp\touch.txt" -NoWait
+
+
+
+
+> c:\windows\system32\cmdiag.exe Console -help
+
+使用目标容器打开控制台会话。
+
+选项:
+  - 命令 <命令行>
+        - 不需要默认值时执行的命令行。
+          默认值为 "cmd"。
+
+[-RunAs <用户名>]
+        - 将用户名传递到 CreateProcess 调用。
+
+[-ExistingLogin]
+        - 对 RunAs 参数中指定的用户使用现有登录会话。仅当
+          设置了 RunAs 参数且 RunAs 参数中指定的用户
+          已在容器内登录时，才能设置此标志。
+
+示例:
+  CmDiag Console 0a1b2c
+  CmDiag Console 0a1b2c powershell
+  CmDiag Console 0a1b2c -RunAs "NT AUTHORITY\SYSTEM" -Command "powershell.exe -ExecutionPolicy Unrestricted"
+
+
+
+
+> c:\windows\system32\cmdiag.exe Map -help
+
+通过给定路径将主机文件夹映射到容器中。
+
+选项:
+  [-ReadOnly]
+        - 指示映射只读。
+
+  <主机文件夹>
+        - 主机上的文件夹路径。
+
+  <容器文件夹>
+        - 容器中的文件夹路径。
+
+示例:
+  CmDiag Map 0a1b2c -ReadOnly "D:\os\bin\amd64fre" "C:\bins\"
+  CmDiag Map 0a1b2c "C:\tmp\logs" "C:\hostlogs"
+
+
+
+
+> c:\windows\system32\cmdiag.exe Unmap -help
+
+通过给定路径取消映射以前映射的文件夹。
+
+选项:
+  <容器文件夹>
+        - 容器中的文件夹路径。
+
+示例:
+  CmDiag Unmap 0a1b2c "C:\hostlogs"
+
+
+
+
+> c:\windows\system32\cmdiag.exe Terminate -help
+
+终止目标容器。
+
+选项:
+  [-Force]
+        - 使用立即终止标志集终止。
+
+示例:
+  CmDiag Terminate 0a1b2c
+  CmDiag Terminate 0a1b2c -Force
+
+
+
+
+> c:\windows\system32\cmdiag.exe StartActivity -help
+
+在容器上启动活动。启动活动可能会修改
+容器的状态，以及防止容器暂停。
+
+选项:
+  -t <以毫秒为单位的时间>
+              - 活动已开始，持续时间为预先确定的一段时间。
+
+示例:
+  CmDiag StartActivity 0a1b2c
+  CmDiag StartActivity 0a1b2c -t 1000
+
+
+
+
+> c:\windows\system32\cmdiag.exe Pause -help
+
+配置特定容器或所有容器的暂停能力。
+
+选项:
+  -On         - 允许特定容器暂停。
+    [-Global] - 允许所有容器暂停。此选项永久保留。
+
+  -Off        - 不允许特定容器暂停。
+    [-Global] - 不允许所有容器暂停。此选项永久保留。
+
+示例:
+  CmDiag Pause -On 0a1b2c
+  CmDiag Pause -On -Global
+  CmDiag Pause -Off -Global
+
+
+
+
+> c:\windows\system32\cmdiag.exe Copy -help
+
+将私有文件复制到容器的基本映像。
+
+选项:
+  <源文件>
+        - 要复制的源文件的路径。
+
+  <容器路径>
+        - 要复制到的容器基本映像中的路径。
+
+  -Force
+        - 终止任何正在运行的容器(私有文件不能应用于正在运行的容器)。
+
+示例:
+  CmDiag copy C:\ntdll.dll Windows\System32\ntdll.dll
+  CmDiag copy C:\test.txt C:\Windows\test.txt -Force
+
+
+
+
+> c:\windows\system32\cmdiag.exe DevelopmentMode -help
+
+配置用于开发模式的容器管理器。
+
+选项:
+  -On         - 启用开发模式。
+
+  -Off        - 禁用开发模式。
+
+  -Force      - 终止任何正在运行的容器(无法对正在运行的容器应用调试选项)。
+
+示例:
+  CmDiag DevelopmentMode -On -Force
+  CmDiag DevelopmentMode -Off
+
+
+
+
