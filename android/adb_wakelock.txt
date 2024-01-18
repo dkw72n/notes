@@ -17,9 +17,9 @@ watch -n 1 -d cat /sys/kernel/debug/wakeup_sources
 每一秒刷新一次，高亮变化的位置
 锁太多的时候，下面的会看不到，可以用：
 
-watch -n 1 -d -e "cat /sys/kernel/debug/wakeup_sources | awk 'NR == 1; NR > 1 {print \$0 | \"sort -nr -k9\"}'"
+watch -n 1 -d -e "cat /sys/kernel/debug/wakeup_sources | awk 'NR == 1; NR > 1 {print \$0 | \"sort -nr -k8\"}'"
 
-按最近激活时间排序
+按 max_time 排序
 
 
 
