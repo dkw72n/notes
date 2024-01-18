@@ -5,7 +5,7 @@ ref:https://stackoverflow.com/questions/5780280/how-can-i-see-which-wakelocks-ar
 获取 wakelock
 ----
 
-cat my_awesome_lock > /sys/power/wake_lock
+echo my_awesome_lock > /sys/power/wake_lock
 
 
 
@@ -26,7 +26,7 @@ watch -n 1 -d -e "cat /sys/kernel/debug/wakeup_sources | awk 'NR == 1; NR > 1 {p
 释放 wakelock
 ----
 
-cat my_awesome_lock > /sys/power/wake_unlock
+echo my_awesome_lock > /sys/power/wake_unlock
 
 
 dumpsys power
