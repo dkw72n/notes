@@ -83,6 +83,8 @@ root@localhost:~# cat /proc/26497/cgroup
 0::/
 ```
 
+没有 cgroup-tools 直接 `echo $PID > /sys/fs/cgroup/cpuacct/uid_0/tasks` 也是可以的
+
 关闭 adb 调试
 ```
 root@localhost:~# /system/bin/cmd settings put global adb_enabled 0
