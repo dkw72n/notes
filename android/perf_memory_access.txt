@@ -1,0 +1,55 @@
+
+PERF_EVENT_BREAKPOINT
+----
+linux 内核支持硬件断点的 perf type: https://github.com/dkw72n/Xiaomi_Kernel_OpenSource/blob/c5fd3be4bab6a9b672aee0e2dc339c7404580747/include/uapi/linux/perf_event.h#L35
+
+可以通过cpu的硬件断点机制，产生 perf 事件。
+
+linux 的 perf 有相关文档
+|  a hardware breakpoint event in the form of
+|  \mem:addr[/len][:access] where addr is the address in
+|  memory you want to break in. Access is the memory access
+|  type (read, write, execute) it can be passed as follows:
+|  \mem:addr[:[r][w][x]]. len is the range, number of bytes
+|  from specified addr, which the breakpoint will cover. If
+|  you want to profile read-write accesses in 0x1000, just
+|  set mem:0x1000:rw. If you want to profile write accesses
+|  in [0x1000~1008), just set mem:0x1000/8:w.
+
+很遗憾，android 的 simpleperf 似乎不支持（至少我的手机）
+
+通过 adeb 环境，可以通过 `apt install linux-perf` 安装一份 linux 的 perf。
+
+`perf list` 输出表明，当前设备支持硬件断点事件
+|
+|  mem:<addr>[/len][:access]                          [Hardware breakpoint]
+|
+
+找一个 app 验证一下
+| perf record -e $(printf mem:0x%x:x $(echo $(( 0x738fd05000 + 0x59bd0 )))) -p 2375 -g
+
+能成功收集到事件
+|  # perf script
+|  Binder:2375_3  2397 119661.143987:          1 mem:0x738fd5ebd0:x: 
+|                     59bd0 je_malloc+0x0 (/apex/com.android.runtime/lib64/bionic/libc.so)
+|                     3e36f malloc+0x2b (/apex/com.android.runtime/lib64/bionic/libc.so)
+|                     68a24 operator new+0x24 (/system/lib64/libc++.so)
+|                    3ddda0 art::JNI::GetStringCritical+0x2d8 (/apex/com.android.runtime/lib64/libart.so)
+|                    13ff94 [unknown] (/system/lib64/libandroid_runtime.so)
+|                    982168 oatexec+0xcd168 (/system/framework/arm64/boot-framework.oat)
+|  
+|  Binder:2375_3  2397 119661.144040:          1 mem:0x738fd5ebd0:x: 
+|                     59bd0 je_malloc+0x0 (/apex/com.android.runtime/lib64/bionic/libc.so)
+|                     3e36f malloc+0x2b (/apex/com.android.runtime/lib64/bionic/libc.so)
+|                      fc80 android::SharedBuffer::alloc+0x20 (/system/lib64/libutils.so)
+|                     12044 [unknown] (/system/lib64/libutils.so)
+|                     12118 android::String16::String16+0x1c (/system/lib64/libutils.so)
+|                    13ffd0 [unknown] (/system/lib64/libandroid_runtime.so)
+|                    982168 oatexec+0xcd168 (/system/framework/arm64/boot-framework.oat)
+
+
+ref
+----
+这个事件之前并不知道它的存在，是从 https://github.com/ri-char/pwatch 这个项目看到的。这个项目通过 api 以编程的方式实现了这一功能。
+
+
