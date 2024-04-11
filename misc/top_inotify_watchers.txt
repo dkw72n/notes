@@ -1,0 +1,3 @@
+for fdinfo in $(find /proc/*/fd -user "$USER" -lname anon_inode:inotify -printf '%hinfo/%f\n' 2>/dev/null); do \
+  echo $(cat $fdinfo | grep "^inotif" | wc -l) $fdinfo ; \
+done | sort -k1 -nr
