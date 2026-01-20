@@ -76,6 +76,8 @@ types:
             'stream_types::memory_list': memory_list
             'stream_types::exception': exception_stream
             'stream_types::module_list': module_list
+            'stream_types::memory_64_list': memory_64_list
+            'stream_types::system_memory_info': system_memory_info_stream
   system_info:
     doc: |
       "System info" stream provides basic information about the
@@ -459,6 +461,396 @@ types:
         type: strz
         encoding: UTF-8
         doc: Path to the PDB file (null-terminated string)
+  memory_64_list:
+    -orig-id: MINIDUMP_MEMORY64_LIST
+    doc: |
+      Memory64 list stream is used to store full memory dumps. Unlike the
+      regular memory list, this format uses 64-bit sizes and stores all
+      memory data contiguously after the descriptor array, which is more
+      efficient for large memory dumps.
+    doc-ref: https://learn.microsoft.com/en-us/windows/win32/api/minidumpapiset/ns-minidumpapiset-minidump_memory64_list
+    seq:
+      - id: num_mem_ranges
+        -orig-id: NumberOfMemoryRanges
+        type: u8
+        doc: Number of memory ranges in this list
+      - id: base_rva
+        -orig-id: BaseRva
+        type: u8
+        doc: |
+          RVA (file offset) of the start of the memory data. All memory
+          regions are stored contiguously starting from this offset.
+      - id: mem_ranges
+        -orig-id: MemoryRanges
+        type: memory_descriptor_64
+        repeat: expr
+        repeat-expr: num_mem_ranges
+        doc: Array of memory range descriptors
+  memory_descriptor_64:
+    -orig-id: MINIDUMP_MEMORY_DESCRIPTOR64
+    doc: |
+      Describes a memory range in a 64-bit memory list. Unlike the regular
+      memory descriptor, this version uses 64-bit data size and does not
+      include an RVA for each range (all data is stored contiguously).
+    doc-ref: https://learn.microsoft.com/en-us/windows/win32/api/minidumpapiset/ns-minidumpapiset-minidump_memory_descriptor64
+    seq:
+      - id: start_of_memory_range
+        -orig-id: StartOfMemoryRange
+        type: u8
+        doc: Starting virtual address of the memory range
+      - id: data_size
+        -orig-id: DataSize
+        type: u8
+        doc: Size of the memory range in bytes
+  system_memory_info_stream:
+    -orig-id: MINIDUMP_SYSTEM_MEMORY_INFO_1
+    doc: |
+      System memory information stream contains detailed information about
+      the system's memory configuration and performance at the time of dump.
+    doc-ref: https://github.com/libyal/libmdmp/blob/main/documentation/Minidump%20(MDMP)%20format.asciidoc
+    seq:
+      - id: revision
+        type: u2
+        doc: Revision of the structure
+      - id: flags
+        type: u2
+        doc: Flags indicating which fields are valid
+      - id: basic_info
+        type: system_basic_information
+        doc: Basic system information
+      - id: filecache_info
+        type: system_filecache_information
+        doc: File cache information
+      - id: basic_perf_info
+        type: system_basic_performance_information
+        doc: Basic performance information
+      - id: perf_info
+        type: system_performance_information
+        doc: Detailed performance information
+  system_basic_information:
+    -orig-id: MINIDUMP_SYSTEM_BASIC_INFORMATION
+    doc: |
+      Contains basic system information including memory and processor details.
+    seq:
+      - id: timer_resolution
+        type: u4
+        doc: Timer resolution in 100-nanosecond units
+      - id: page_size
+        type: u4
+        doc: Size of a memory page in bytes
+      - id: number_of_physical_pages
+        type: u4
+        doc: Total number of physical memory pages
+      - id: lowest_physical_page_number
+        type: u4
+        doc: Lowest physical page number
+      - id: highest_physical_page_number
+        type: u4
+        doc: Highest physical page number
+      - id: allocation_granularity
+        type: u4
+        doc: Granularity of memory allocation (typically 64KB)
+      - id: minimum_user_mode_address
+        type: u8
+        doc: Lowest user-mode virtual address
+      - id: maximum_user_mode_address
+        type: u8
+        doc: Highest user-mode virtual address
+      - id: active_processors_affinity_mask
+        type: u8
+        doc: Bit mask of active processors
+      - id: number_of_processors
+        type: u4
+        doc: Number of processors in the system
+  system_filecache_information:
+    -orig-id: MINIDUMP_SYSTEM_FILECACHE_INFORMATION
+    doc: |
+      Contains information about the system file cache.
+    seq:
+      - id: current_size
+        type: u8
+        doc: Current size of the file cache in bytes
+      - id: peak_size
+        type: u8
+        doc: Peak size of the file cache in bytes
+      - id: page_fault_count
+        type: u4
+        doc: Number of page faults
+      - id: minimum_working_set
+        type: u8
+        doc: Minimum working set size in bytes
+      - id: maximum_working_set
+        type: u8
+        doc: Maximum working set size in bytes
+      - id: current_size_including_transition_in_pages
+        type: u8
+        doc: Current size including transition pages
+      - id: peak_size_including_transition_in_pages
+        type: u8
+        doc: Peak size including transition pages
+      - id: transition_re_purpose_count
+        type: u4
+        doc: Transition re-purpose count
+      - id: flags
+        type: u4
+        doc: File cache flags
+  system_basic_performance_information:
+    -orig-id: MINIDUMP_SYSTEM_BASIC_PERFORMANCE_INFORMATION
+    doc: |
+      Contains basic performance information about the system.
+    seq:
+      - id: available_pages
+        type: u8
+        doc: Number of available physical pages
+      - id: committed_pages
+        type: u8
+        doc: Number of committed pages
+      - id: commit_limit
+        type: u8
+        doc: Maximum number of pages that can be committed
+      - id: peak_commitment
+        type: u8
+        doc: Peak number of committed pages
+  system_performance_information:
+    -orig-id: MINIDUMP_SYSTEM_PERFORMANCE_INFORMATION
+    doc: |
+      Contains detailed system performance information including I/O,
+      memory, and cache statistics.
+    seq:
+      - id: idle_process_time
+        type: u8
+        doc: Time spent in idle process (100-nanosecond units)
+      - id: io_read_transfer_count
+        type: u8
+        doc: Total bytes read via I/O
+      - id: io_write_transfer_count
+        type: u8
+        doc: Total bytes written via I/O
+      - id: io_other_transfer_count
+        type: u8
+        doc: Total bytes transferred via other I/O operations
+      - id: io_read_operation_count
+        type: u4
+        doc: Number of I/O read operations
+      - id: io_write_operation_count
+        type: u4
+        doc: Number of I/O write operations
+      - id: io_other_operation_count
+        type: u4
+        doc: Number of other I/O operations
+      - id: available_pages
+        type: u4
+        doc: Number of available pages
+      - id: committed_pages
+        type: u4
+        doc: Number of committed pages
+      - id: commit_limit
+        type: u4
+        doc: Commit limit in pages
+      - id: peak_commitment
+        type: u4
+        doc: Peak commitment in pages
+      - id: page_fault_count
+        type: u4
+        doc: Total page faults
+      - id: copy_on_write_count
+        type: u4
+        doc: Copy-on-write fault count
+      - id: transition_count
+        type: u4
+        doc: Transition fault count
+      - id: cache_transition_count
+        type: u4
+        doc: Cache transition count
+      - id: demand_zero_count
+        type: u4
+        doc: Demand zero fault count
+      - id: page_read_count
+        type: u4
+        doc: Pages read from disk
+      - id: page_read_io_count
+        type: u4
+        doc: Page read I/O operations
+      - id: cache_read_count
+        type: u4
+        doc: Cache read count
+      - id: cache_io_count
+        type: u4
+        doc: Cache I/O operations
+      - id: dirty_pages_write_count
+        type: u4
+        doc: Dirty pages written
+      - id: dirty_write_io_count
+        type: u4
+        doc: Dirty page write I/O operations
+      - id: mapped_pages_write_count
+        type: u4
+        doc: Mapped pages written
+      - id: mapped_write_io_count
+        type: u4
+        doc: Mapped page write I/O operations
+      - id: paged_pool_pages
+        type: u4
+        doc: Paged pool pages
+      - id: non_paged_pool_pages
+        type: u4
+        doc: Non-paged pool pages
+      - id: paged_pool_allocs
+        type: u4
+        doc: Paged pool allocations
+      - id: paged_pool_frees
+        type: u4
+        doc: Paged pool frees
+      - id: non_paged_pool_allocs
+        type: u4
+        doc: Non-paged pool allocations
+      - id: non_paged_pool_frees
+        type: u4
+        doc: Non-paged pool frees
+      - id: free_system_ptes
+        type: u4
+        doc: Free system page table entries
+      - id: resident_system_code_page
+        type: u4
+        doc: Resident system code pages
+      - id: total_system_driver_pages
+        type: u4
+        doc: Total system driver pages
+      - id: total_system_code_pages
+        type: u4
+        doc: Total system code pages
+      - id: non_paged_pool_lookaside_hits
+        type: u4
+        doc: Non-paged pool lookaside hits
+      - id: paged_pool_lookaside_hits
+        type: u4
+        doc: Paged pool lookaside hits
+      - id: available_paged_pool_pages
+        type: u4
+        doc: Available paged pool pages
+      - id: resident_system_cache_page
+        type: u4
+        doc: Resident system cache pages
+      - id: resident_paged_pool_page
+        type: u4
+        doc: Resident paged pool pages
+      - id: resident_system_driver_page
+        type: u4
+        doc: Resident system driver pages
+      - id: cc_fast_read_no_wait
+        type: u4
+        doc: Cache manager fast read (no wait) count
+      - id: cc_fast_read_wait
+        type: u4
+        doc: Cache manager fast read (wait) count
+      - id: cc_fast_read_resource_miss
+        type: u4
+        doc: Cache manager fast read resource miss count
+      - id: cc_fast_read_not_possible
+        type: u4
+        doc: Cache manager fast read not possible count
+      - id: cc_fast_mdl_read_no_wait
+        type: u4
+        doc: Cache manager fast MDL read (no wait) count
+      - id: cc_fast_mdl_read_wait
+        type: u4
+        doc: Cache manager fast MDL read (wait) count
+      - id: cc_fast_mdl_read_resource_miss
+        type: u4
+        doc: Cache manager fast MDL read resource miss count
+      - id: cc_fast_mdl_read_not_possible
+        type: u4
+        doc: Cache manager fast MDL read not possible count
+      - id: cc_map_data_no_wait
+        type: u4
+        doc: Cache manager map data (no wait) count
+      - id: cc_map_data_wait
+        type: u4
+        doc: Cache manager map data (wait) count
+      - id: cc_map_data_no_wait_miss
+        type: u4
+        doc: Cache manager map data (no wait) miss count
+      - id: cc_map_data_wait_miss
+        type: u4
+        doc: Cache manager map data (wait) miss count
+      - id: cc_pin_mapped_data_count
+        type: u4
+        doc: Cache manager pin mapped data count
+      - id: cc_pin_read_no_wait
+        type: u4
+        doc: Cache manager pin read (no wait) count
+      - id: cc_pin_read_wait
+        type: u4
+        doc: Cache manager pin read (wait) count
+      - id: cc_pin_read_no_wait_miss
+        type: u4
+        doc: Cache manager pin read (no wait) miss count
+      - id: cc_pin_read_wait_miss
+        type: u4
+        doc: Cache manager pin read (wait) miss count
+      - id: cc_copy_read_no_wait
+        type: u4
+        doc: Cache manager copy read (no wait) count
+      - id: cc_copy_read_wait
+        type: u4
+        doc: Cache manager copy read (wait) count
+      - id: cc_copy_read_no_wait_miss
+        type: u4
+        doc: Cache manager copy read (no wait) miss count
+      - id: cc_copy_read_wait_miss
+        type: u4
+        doc: Cache manager copy read (wait) miss count
+      - id: cc_mdl_read_no_wait
+        type: u4
+        doc: Cache manager MDL read (no wait) count
+      - id: cc_mdl_read_wait
+        type: u4
+        doc: Cache manager MDL read (wait) count
+      - id: cc_mdl_read_no_wait_miss
+        type: u4
+        doc: Cache manager MDL read (no wait) miss count
+      - id: cc_mdl_read_wait_miss
+        type: u4
+        doc: Cache manager MDL read (wait) miss count
+      - id: cc_read_ahead_ios
+        type: u4
+        doc: Cache manager read-ahead I/Os
+      - id: cc_lazy_write_ios
+        type: u4
+        doc: Cache manager lazy write I/Os
+      - id: cc_lazy_write_pages
+        type: u4
+        doc: Cache manager lazy write pages
+      - id: cc_data_flushes
+        type: u4
+        doc: Cache manager data flushes
+      - id: cc_data_pages
+        type: u4
+        doc: Cache manager data pages
+      - id: context_switches
+        type: u4
+        doc: Context switch count
+      - id: first_level_tb_fills
+        type: u4
+        doc: First level TLB fills
+      - id: second_level_tb_fills
+        type: u4
+        doc: Second level TLB fills
+      - id: system_calls
+        type: u4
+        doc: System call count
+      - id: cc_total_dirty_pages
+        type: u4
+        doc: Total dirty pages in cache
+      - id: cc_dirty_page_threshold
+        type: u4
+        doc: Dirty page threshold
+      - id: resident_available_pages
+        type: s4
+        doc: Resident available pages (signed)
+      - id: shared_committed_pages
+        type: u4
+        doc: Shared committed pages
 enums:
   stream_types:
     # https://learn.microsoft.com/en-us/windows/win32/api/minidumpapiset/ne-minidumpapiset-minidump_stream_type
